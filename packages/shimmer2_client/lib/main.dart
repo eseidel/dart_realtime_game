@@ -81,14 +81,14 @@ class MyGame extends StatefulWidget {
 
 class _MyGameState extends State<MyGame> {
   late ServerConnection connection;
-  List<ClientEntity> entities = [];
+  ClientGame game = ClientGame();
 
   @override
   void initState() {
     connection = ServerConnection(Uri.parse('http://localhost:3000'));
     connection.onTick((entities) {
       setState(() {
-        this.entities = entities;
+        game.entities = entities;
       });
     });
     super.initState();
@@ -97,18 +97,35 @@ class _MyGameState extends State<MyGame> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: Stack(fit: StackFit.expand, children: [
-      CustomPaint(
-        painter: WorldPainter(entities),
+      home: Center(
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: CustomPaint(
+            painter: WorldPainter(game),
+          ),
+        ),
       ),
-    ]));
+    );
   }
 }
 
-class WorldPainter extends CustomPainter {
-  final List<ClientEntity> entities;
+class ClientMap {
+  final int width;
+  final int height;
 
-  WorldPainter(this.entities) : super();
+  ClientMap(this.width, this.height);
+}
+
+class ClientGame {
+  final ClientMap map = ClientMap(100, 100);
+  List<ClientEntity> entities = [];
+}
+
+class WorldPainter extends CustomPainter {
+  // FIXME: game.entities is not final.
+  final ClientGame game;
+
+  WorldPainter(this.game) : super();
 
   void paintEntity(Canvas canvas, ClientEntity entity) {
     var paint = Paint()..color = Colors.green;
@@ -118,7 +135,8 @@ class WorldPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (var entity in entities) {
+    canvas.scale(size.width / game.map.width, size.height / game.map.height);
+    for (var entity in game.entities) {
       paintEntity(canvas, entity);
     }
   }
