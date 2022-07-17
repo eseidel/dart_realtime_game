@@ -12,6 +12,9 @@ dependencies:
     sdk: flutter
   shimmer2_shared:
     path: ../shimmer2_shared
+  # Version 2.0.0 moved to protocol 3.x which is incompatable with socket_io
+  # which is still on protocol 2.x
+  socket_io_client: <2.0.0
 
 dev_dependencies:
   flutter_test:
