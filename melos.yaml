@@ -1,0 +1,12 @@
+name: shimmer2
+
+packages:
+  - packages/**
+
+# Disables generation of .iml files (since I use Visual Studio Code).
+ide:
+  intellij: false
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
