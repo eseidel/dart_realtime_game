@@ -97,12 +97,14 @@ class Game {
 
 class ShimmerServer {
   final int port;
+  final int msPerTick;
   // FIXME: Not sure this map is needed, could just store the extra data
   // on the ServerEntities?
   Map<String, String> activeClients = {};
   Game game = Game();
 
-  ShimmerServer({this.port = 3000});
+  ShimmerServer({this.port = 3000, int ticksPerSecond = 10})
+      : msPerTick = 1000 ~/ ticksPerSecond;
 
   PlayerEntity? playerEntityForClient(String socketId) {
     var entityId = activeClients[socketId];
@@ -127,14 +129,12 @@ class ShimmerServer {
   }
 
   void connectClient(String socketId) {
-    print("connectClient: $socketId");
     var existingEntity = playerEntityForClient(socketId);
     assert(existingEntity == null);
     createPlayer(socketId);
   }
 
   void disconnectClient(String socketId) {
-    print("disconnectClient: $socketId");
     var entityId = activeClients.remove(socketId);
     game.entities.removeWhere((element) => element.id == entityId);
   }
@@ -144,15 +144,9 @@ class ShimmerServer {
     io.on('connection', (client) {
       // FIXME: Use some an explicit connect message instead.
       connectClient(client.id);
-      print('connection default namespace');
-      client.on('msg', (data) {
-        print('data from default => $data');
-        client.emit('fromServer', "ok");
-      });
 
       client.on('move_player_to', (data) {
         var position = IPoint.fromJson(jsonDecode(data));
-        print('move_player_to ${client.id} $position');
         playerEntityForClient(client.id)?.moveTo(position);
       });
 
@@ -163,7 +157,7 @@ class ShimmerServer {
     io.listen(port);
 
     game.initialize();
-    Timer.periodic(const Duration(seconds: 2), (timer) {
+    Timer.periodic(Duration(milliseconds: msPerTick), (timer) {
       game.tick();
       for (var client in io.sockets.sockets) {
         client.emit(
