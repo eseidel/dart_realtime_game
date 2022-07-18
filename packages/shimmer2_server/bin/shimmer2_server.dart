@@ -50,23 +50,23 @@ class PlayerEntity extends Entity {
   void tick() {}
 }
 
-class PathFollower extends Entity {
-  List<IPoint> waypoints;
-  int currentWaypointIndex = 0;
+// class PathFollower extends Entity {
+//   List<IPoint> waypoints;
+//   int currentWaypointIndex = 0;
 
-  PathFollower({
-    required super.id,
-    required super.position,
-    required super.size,
-    required this.waypoints,
-  });
+//   PathFollower({
+//     required super.id,
+//     required super.position,
+//     required super.size,
+//     required this.waypoints,
+//   });
 
-  @override
-  void tick() {
-    currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.length;
-    position = waypoints[currentWaypointIndex];
-  }
-}
+//   @override
+//   void tick() {
+//     currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.length;
+//     position = waypoints[currentWaypointIndex];
+//   }
+// }
 
 class Game {
   GameMap map = GameMap();
@@ -74,18 +74,18 @@ class Game {
   Game();
 
   void initialize() {
-    var size = map.size;
-    entities.add(PathFollower(
-      id: 'circle',
-      position: IPoint(10, 10),
-      size: ISize(10, 10),
-      waypoints: [
-        IPoint(size.xPercent(.5), size.yPercent(.25)),
-        IPoint(size.xPercent(.75), size.yPercent(.5)),
-        IPoint(size.xPercent(.5), size.yPercent(.75)),
-        IPoint(size.xPercent(.25), size.yPercent(.5)),
-      ],
-    ));
+    // var size = map.size;
+    // entities.add(PathFollower(
+    //   id: 'circle',
+    //   position: IPoint(10, 10),
+    //   size: ISize(10, 10),
+    //   waypoints: [
+    //     IPoint(size.xPercent(.5), size.yPercent(.25)),
+    //     IPoint(size.xPercent(.75), size.yPercent(.5)),
+    //     IPoint(size.xPercent(.5), size.yPercent(.75)),
+    //     IPoint(size.xPercent(.25), size.yPercent(.5)),
+    //   ],
+    // ));
   }
 
   void tick() {

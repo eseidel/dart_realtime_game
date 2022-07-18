@@ -93,9 +93,8 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
         position: unitSystem.fromServerPointToGame(entity.position),
       );
     }
-    return ServerControlledComponent(
+    return DummyRenderer(
       size: unitSystem.fromServerSizeToGame(entity.size),
-      anchor: Anchor.center,
       position: unitSystem.fromServerPointToGame(entity.position),
     );
   }

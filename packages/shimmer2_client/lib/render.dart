@@ -27,8 +27,27 @@ class TapIndicator extends PositionComponent {
   }
 }
 
-class ServerControlledComponent extends PositionComponent {
+abstract class ServerControlledComponent extends PositionComponent {
   ServerControlledComponent({super.size, super.anchor, super.position});
+}
+
+class DummyRenderer extends ServerControlledComponent {
+  static final _paint = Paint()
+    ..color = const Color.fromARGB(255, 200, 40, 168);
+
+  DummyRenderer({super.position, required super.size})
+      : super(anchor: Anchor.center);
+
+  @override
+  Future<void>? onLoad() {
+    add(CircleComponent(
+      radius: width / 2,
+      paint: _paint,
+      position: size / 2,
+      anchor: Anchor.center,
+    ));
+    return super.onLoad();
+  }
 }
 
 class PlayerRenderer extends ServerControlledComponent {
