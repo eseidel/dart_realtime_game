@@ -10,6 +10,7 @@ dependencies:
   shimmer2_shared:
     path: ../shimmer2_shared
   socket_io: ^1.0.1
+  uuid: ^3.0.6
 
 dev_dependencies:
   lints: ^2.0.0
