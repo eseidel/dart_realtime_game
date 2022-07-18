@@ -14,7 +14,7 @@ class TapIndicator extends PositionComponent {
   void onMount() {
     super.onMount();
     add(CircleComponent(
-      radius: 10,
+      radius: 3,
       paint: _paint,
       anchor: Anchor.center,
     ));

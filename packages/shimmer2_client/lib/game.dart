@@ -48,7 +48,7 @@ class UnitSystem {
   // Could assert that height scale matches.
 
   double scale(int value, double scale) => value * scale;
-  int scaleAndFloor(double value, double scale) => (value / scale).floor();
+  int scaleAndFloor(double value, double scale) => (value * scale).floor();
 
   double toClient(int value) => scale(value, clientToServer);
   int toServer(double value) => scaleAndFloor(value, serverToClient);
@@ -81,7 +81,7 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
   late ShimmerGame renderer;
   final UnitSystem unitSystem = UnitSystem(
     serverSize: const ISize(100, 100),
-    clientSize: Vector2(1000, 1000),
+    clientSize: Vector2(200, 200),
   );
   Map<String, ServerControlledComponent> entityMap = {};
 

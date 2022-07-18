@@ -41,6 +41,11 @@ class PlayerEntity extends Entity {
     required super.size,
   });
 
+  void moveTo(IPoint position) {
+    // Should eventually move over time.
+    this.position = position;
+  }
+
   @override
   void tick() {}
 }
@@ -99,10 +104,12 @@ class ShimmerServer {
 
   ShimmerServer({this.port = 3000});
 
-  Entity? playerEntityForClient(String socketId) {
+  PlayerEntity? playerEntityForClient(String socketId) {
     var entityId = activeClients[socketId];
     if (entityId != null) {
-      return game.entities.firstWhere((element) => element.id == entityId);
+      return game.entities
+          .whereType<PlayerEntity>()
+          .firstWhere((element) => element.id == entityId);
     }
     return null;
   }
@@ -146,6 +153,7 @@ class ShimmerServer {
       client.on('move_player_to', (data) {
         var position = IPoint.fromJson(jsonDecode(data));
         print('move_player_to ${client.id} $position');
+        playerEntityForClient(client.id)?.moveTo(position);
       });
 
       client.on('disconnect', (_) {
