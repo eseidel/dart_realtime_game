@@ -34,20 +34,27 @@ abstract class Entity {
   void tick();
 }
 
-class PlayerEntity extends Entity {
+class PlayerEntity extends Entity implements Movable {
+  late MoveTowards mover;
   PlayerEntity({
     required super.id,
     required super.position,
     required super.size,
-  });
+  }) {
+    mover = MoveTowards(this);
+  }
 
   void moveTo(IPoint position) {
-    // Should eventually move over time.
-    this.position = position;
+    mover.destination = position;
   }
 
   @override
-  void tick() {}
+  void tick() {
+    mover.tick();
+  }
+
+  @override
+  double get speed => 5.0;
 }
 
 // class PathFollower extends Entity {

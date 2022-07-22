@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flame/game.dart';
 
@@ -110,8 +109,6 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
   void updateRenderer(NetEntity entity, ServerControlledComponent component) {
     component.size = unitSystem.fromServerSizeToGame(entity.size);
     component.position = unitSystem.fromServerPointToGame(entity.position);
-    print("${entity.position} ${entity.size}");
-    print("${component.position} ${component.size}");
   }
 
   void removeRendererFor(String id) {
@@ -163,7 +160,6 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
   void movePlayerTo(Vector2 gamePosition) {
     var serverPosition = unitSystem.fromGamePointToServer(gamePosition);
     // TODO: Should this clamp to the map size?
-    // TODO: implement movePlayerTo
     connection.socket.emit('move_player_to', jsonEncode(serverPosition));
   }
 }
