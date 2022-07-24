@@ -64,9 +64,9 @@ class Entity implements Movable {
     mover.destination = position;
   }
 
-  void tick() {
+  void update(double delta) {
     // if on client, only for client_id = me.
-    mover.tick();
+    mover.update(delta);
   }
 }
 
@@ -90,14 +90,15 @@ class MoveTowards<T extends Movable> {
     destination = newDestination;
   }
 
-  void tick() {
+  void update(double timeDelta) {
     Vector2 delta = (destination - delegate.position).toVector2();
     delegate.angle = delta.angleTo(upVector);
 
+    double speed = delegate.speed * timeDelta;
     // This makes it stop when it gets there.
-    if (delta.length > delegate.speed) {
+    if (delta.length > speed) {
       delta.normalize();
-      delta *= delegate.speed;
+      delta *= speed;
       delegate.action = Action.moving;
     } else {
       delegate.action = Action.idle;
@@ -121,7 +122,14 @@ class GameState {
 class Game {
   GameMap map = GameMap();
   List<Entity> entities = [];
-  Game();
+  Duration tickDuration;
+
+  static const serverTicksPerSecond = 30;
+
+  Game({int ticksPerSecond = serverTicksPerSecond})
+      : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond);
+
+  double secondsPerTick() => tickDuration.inMilliseconds / 1000;
 
   NetGameState toNet() => NetGameState(
         entities: entities.map((entity) => entity.toNet()).toList(),
@@ -129,7 +137,7 @@ class Game {
 
   void tick() {
     for (var entity in entities) {
-      entity.tick();
+      entity.update(secondsPerTick());
     }
   }
 }

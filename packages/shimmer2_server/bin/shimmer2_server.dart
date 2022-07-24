@@ -31,7 +31,7 @@ class ShimmerServer {
       position: game.map.randomPosition(),
       size: ISize(10, 10),
       angle: 0.0,
-      speed: 5.0,
+      speed: 300.0,
       action: Action.idle,
     );
     game.entities.add(entity);
@@ -70,7 +70,7 @@ class ShimmerServer {
     });
     io.listen(port);
 
-    Timer.periodic(Duration(milliseconds: msPerTick), (timer) {
+    Timer.periodic(game.tickDuration, (timer) {
       game.tick();
       for (var client in io.sockets.sockets) {
         client.emit("tick", jsonEncode(game.toNet().toJson()));
