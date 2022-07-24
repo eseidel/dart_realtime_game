@@ -16,3 +16,15 @@
 - Make entities move somewhere over time.
 - Make it possible to set a color from the client.
 - Make it possible to set a name from the client.
+
+
+# Arch
+- Server ticks at a fixed rate
+- Client runs a copy of the server (predicter) tick.
+- Client actions polled at a fixed rate and sent to both server and predicter.
+- Client renders from predicter at current time.
+- Packets from server update predicters previous times.
+- Client uses further interpoloation between states to smooth animations?
+
+# References
+https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html

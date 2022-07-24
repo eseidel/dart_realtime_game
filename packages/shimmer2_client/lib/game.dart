@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' as widgets;
 import 'package:flame/game.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
@@ -8,107 +8,92 @@ import 'package:shimmer2_shared/shimmer2_shared.dart';
 import 'network.dart';
 import 'render.dart';
 
-// class ClientEntity {
-//   final String id;
-//   final int x;
-//   final int y;
-//   ClientEntity({required this.id, required this.x, required this.y});
-
-//   ClientEntity.fromJson(Map<String, dynamic> json)
-//       : id = json['id'],
-//         x = json['x'],
-//         y = json['y'];
-// }
-
-class ClientMap {
-  final int width;
-  final int height;
-
-  ClientMap(this.width, this.height);
-}
-
-class ClientGameState {
-  final ClientMap map = ClientMap(100, 100);
-  // List<ClientEntity> entities = [];
-}
-
 typedef ServerPosition = IPoint;
 
 class UnitSystem {
-  final ISize serverSize;
-  final Vector2 clientSize;
+  final ISize gameSize;
+  final Vector2 renderSize;
 
-  final double serverToClient;
-  final double clientToServer;
+  final double gameToRender;
+  final double renderToGame;
 
-  UnitSystem({required this.serverSize, required this.clientSize})
-      : serverToClient = clientSize.x / serverSize.width,
-        clientToServer = serverSize.width / clientSize.x;
+  UnitSystem({required this.gameSize, required this.renderSize})
+      : gameToRender = renderSize.x / gameSize.width,
+        renderToGame = gameSize.width / renderSize.x;
   // Could assert that height scale matches.
 
   double scale(int value, double scale) => value * scale;
   int scaleAndFloor(double value, double scale) => (value * scale).floor();
 
-  double toClient(int value) => scale(value, clientToServer);
-  int toServer(double value) => scaleAndFloor(value, serverToClient);
+  double toRender(int value) => scale(value, renderToGame);
+  int toGame(double value) => scaleAndFloor(value, gameToRender);
 
-  ServerPosition fromGamePointToServer(Vector2 game) {
-    return ServerPosition(toServer(game.x), toServer(game.y));
+  ServerPosition fromRenderPointToGame(Vector2 game) {
+    return ServerPosition(toGame(game.x), toGame(game.y));
   }
 
-  Vector2 fromServerPointToGame(IPoint server) {
-    return Vector2(toClient(server.x), toClient(server.y));
+  Vector2 fromGamePointToRender(IPoint game) {
+    return Vector2(toRender(game.x), toRender(game.y));
   }
 
-  Vector2 fromServerSizeToGame(ISize server) {
-    return Vector2(toClient(server.width), toClient(server.height));
+  Vector2 fromGameSizeToRender(ISize game) {
+    return Vector2(toRender(game.width), toRender(game.height));
   }
 }
 
-class MyGame extends StatefulWidget {
-  const MyGame({super.key});
+class RenderTree extends widgets.StatefulWidget {
+  final PlayerActions actions;
+  final String? playerEntityId; // entity we're controlling
+
+  const RenderTree({
+    super.key,
+    required this.actions,
+    this.playerEntityId,
+  });
 
   @override
-  State<MyGame> createState() => _MyGameState();
+  widgets.State<RenderTree> createState() => _RenderTreeState();
 }
 
-// Like the Element tree, this maps from the ClientGameState
+// Like Flutter's Element tree, this maps from the GameState
 // to the renderer (the FlameGame object).
-class _MyGameState extends State<MyGame> implements PlayerActions {
-  late ServerConnection connection;
-  ClientGameState gameState = ClientGameState();
-  late ShimmerGame renderer;
+class _RenderTreeState extends widgets.State<RenderTree> {
+  late ShimmerRenderer renderer;
   final UnitSystem unitSystem = UnitSystem(
-    serverSize: const ISize(100, 100),
-    clientSize: Vector2(200, 200),
+    gameSize: const ISize(100, 100),
+    renderSize: Vector2(200, 200),
   );
   Map<String, ServerControlledComponent> entityMap = {};
 
-  ServerControlledComponent _createRendererInner(
-      NetEntity entity, bool isPlayer) {
-    if (isPlayer) {
+  ServerControlledComponent _createRendererInner(Entity entity) {
+    // FIXME: This is the wrong way to do this, we should create renderers
+    // based on entity type, not just which one we're controlling.
+    if (entity.id == widget.playerEntityId) {
       return PlayerComponent(
-        size: unitSystem.fromServerSizeToGame(entity.size),
-        position: unitSystem.fromServerPointToGame(entity.position),
+        size: unitSystem.fromGameSizeToRender(entity.size),
+        position: unitSystem.fromGamePointToRender(entity.position),
+        angle: entity.angle,
       );
     }
     return DummyRenderer(
-      size: unitSystem.fromServerSizeToGame(entity.size),
-      position: unitSystem.fromServerPointToGame(entity.position),
+      size: unitSystem.fromGameSizeToRender(entity.size),
+      position: unitSystem.fromGamePointToRender(entity.position),
+      angle: entity.angle,
     );
   }
 
-  ServerControlledComponent createRendererFor(NetEntity entity, bool isPlayer) {
+  ServerControlledComponent createRendererFor(Entity entity) {
     print("createRendererFor ${entity.id}");
-    var component = _createRendererInner(entity, isPlayer);
+    var component = _createRendererInner(entity);
     renderer.add(component);
     entityMap[entity.id] = component;
     return component;
   }
 
-  void updateRenderer(NetEntity entity, ServerControlledComponent component) {
-    component.size = unitSystem.fromServerSizeToGame(entity.size);
-    component.position = unitSystem.fromServerPointToGame(entity.position);
+  void updateRenderer(Entity entity, ServerControlledComponent component) {
+    component.size = unitSystem.fromGameSizeToRender(entity.size);
+    component.position = unitSystem.fromGamePointToRender(entity.position);
+    component.angle = entity.angle;
   }
 
   void removeRendererFor(String id) {
@@ -116,26 +101,18 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
     component?.removeFromParent();
   }
 
-  void processUpdateFromServer(NetClientUpdate update) {
+  void updateToGameState(GameState state) {
     setState(() {
       var unseenIds = Set.from(entityMap.keys);
-      for (var entity in update.entities) {
-        // Some day we may want to keep a client-side entity list
-        // for speculative changes?  We would update that first and
-        // then separately update the "rendering tree" from those.
-        // For now we're skipping that and just updating the rendering
-        // tree from the (immutable) network data directly.
+      for (var entity in state.entities) {
         var renderer = entityMap[entity.id];
         if (renderer == null) {
-          // new entity
-          createRendererFor(entity, entity.id == update.playerEntityId);
+          createRendererFor(entity);
         } else {
-          // update
           updateRenderer(entity, renderer);
         }
         unseenIds.remove(entity.id);
       }
-      // remove any unvisited entities
       for (var id in unseenIds) {
         removeRendererFor(id);
       }
@@ -144,22 +121,71 @@ class _MyGameState extends State<MyGame> implements PlayerActions {
 
   @override
   void initState() {
-    connection = ServerConnection(Uri.parse('http://localhost:3000'));
-    connection.onTick(processUpdateFromServer);
-    renderer = ShimmerGame(actions: this, worldSize: unitSystem.clientSize.x);
-
+    renderer = ShimmerRenderer(actions: widget.actions, unitSystem: unitSystem);
     super.initState();
   }
 
   @override
-  Widget build(BuildContext context) {
+  widgets.Widget build(widgets.BuildContext context) {
     return GameWidget(game: renderer);
+  }
+}
+
+class ShimmerMain extends widgets.StatefulWidget {
+  const ShimmerMain({widgets.Key? key}) : super(key: key);
+
+  @override
+  widgets.State<ShimmerMain> createState() => _ShimmerMainState();
+}
+
+// Main class of the game.  Starts the network connection, keeps hold of the
+// local client state and the renderer and keeps them in sync.
+class _ShimmerMainState extends widgets.State<ShimmerMain>
+    implements PlayerActions {
+  late ServerConnection connection;
+  late ClientGameModel gameModel = ClientGameModel();
+  String? playerEntityId;
+  widgets.GlobalKey<_RenderTreeState> _renderTreeKey = widgets.GlobalKey();
+
+  @override
+  void initState() {
+    connection = ServerConnection(Uri.parse('http://localhost:3000'));
+    connection.onUpdateFromServer((update) {
+      // Is this setState necessary?
+      setState(() {
+        gameModel.processUpdateFromServer(update);
+        _renderTreeKey.currentState
+            ?.updateToGameState(gameModel.lastStateFromServer);
+      });
+    });
+    connection.onSetPlayerEntityId((playerEntityId) {
+      setState(() {
+        this.playerEntityId = playerEntityId;
+      });
+    });
+    super.initState();
   }
 
   @override
-  void movePlayerTo(Vector2 gamePosition) {
-    var serverPosition = unitSystem.fromGamePointToServer(gamePosition);
+  void movePlayerTo(IPoint position) {
     // TODO: Should this clamp to the map size?
-    connection.socket.emit('move_player_to', jsonEncode(serverPosition));
+    connection.socket.emit('move_player_to', jsonEncode(position));
+  }
+
+  @override
+  widgets.Widget build(widgets.BuildContext context) {
+    return RenderTree(
+      key: _renderTreeKey,
+      actions: this,
+      playerEntityId: playerEntityId,
+    );
+  }
+}
+
+class ClientGameModel {
+  GameState lastStateFromServer = const GameState.empty();
+
+  void processUpdateFromServer(NetGameState state) {
+    lastStateFromServer = GameState.fromNet(state);
   }
 }

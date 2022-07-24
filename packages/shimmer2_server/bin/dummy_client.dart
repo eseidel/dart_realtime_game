@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+// ignore: depend_on_referenced_packages
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:shimmer2_shared/shimmer2_shared.dart';
 

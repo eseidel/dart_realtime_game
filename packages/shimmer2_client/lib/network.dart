@@ -46,9 +46,16 @@ class ServerConnection {
     socket.on('fromServer', (_) => print(_));
   }
 
-  void onTick(void Function(NetClientUpdate update) callback) {
+  // Could just use the players username instead?
+  void onSetPlayerEntityId(void Function(String playerEntityId) callback) {
+    socket.on('connected', (data) {
+      callback(data['entity_id']);
+    });
+  }
+
+  void onUpdateFromServer(void Function(NetGameState update) callback) {
     socket.on('tick', (data) {
-      var entities = NetClientUpdate.fromJson(jsonDecode(data));
+      var entities = NetGameState.fromJson(jsonDecode(data));
       callback(entities);
     });
   }

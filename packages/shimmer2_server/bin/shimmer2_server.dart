@@ -2,105 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:socket_io/socket_io.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:math';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
-
-class GameMap {
-  final ISize size = ISize(100, 100);
-
-  IPoint randomPosition() {
-    var random = Random();
-    return IPoint(random.nextInt(size.width), random.nextInt(size.height));
-  }
-}
-
-abstract class Entity {
-  final String id;
-  IPoint position;
-  ISize size;
-
-  Entity({required this.id, required this.position, required this.size});
-
-  NetEntity toNetEntity() => NetEntity(
-        id: id,
-        position: position,
-        size: size,
-      );
-
-  // Convenience
-  Map<String, dynamic> toJson() => toNetEntity().toJson();
-
-  void tick();
-}
-
-class PlayerEntity extends Entity implements Movable {
-  late MoveTowards mover;
-  PlayerEntity({
-    required super.id,
-    required super.position,
-    required super.size,
-  }) {
-    mover = MoveTowards(this);
-  }
-
-  void moveTo(IPoint position) {
-    mover.destination = position;
-  }
-
-  @override
-  void tick() {
-    mover.tick();
-  }
-
-  @override
-  double get speed => 5.0;
-}
-
-// class PathFollower extends Entity {
-//   List<IPoint> waypoints;
-//   int currentWaypointIndex = 0;
-
-//   PathFollower({
-//     required super.id,
-//     required super.position,
-//     required super.size,
-//     required this.waypoints,
-//   });
-
-//   @override
-//   void tick() {
-//     currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.length;
-//     position = waypoints[currentWaypointIndex];
-//   }
-// }
-
-class Game {
-  GameMap map = GameMap();
-  List<Entity> entities = [];
-  Game();
-
-  void initialize() {
-    // var size = map.size;
-    // entities.add(PathFollower(
-    //   id: 'circle',
-    //   position: IPoint(10, 10),
-    //   size: ISize(10, 10),
-    //   waypoints: [
-    //     IPoint(size.xPercent(.5), size.yPercent(.25)),
-    //     IPoint(size.xPercent(.75), size.yPercent(.5)),
-    //     IPoint(size.xPercent(.5), size.yPercent(.75)),
-    //     IPoint(size.xPercent(.25), size.yPercent(.5)),
-    //   ],
-    // ));
-  }
-
-  void tick() {
-    for (var entity in entities) {
-      entity.tick();
-    }
-  }
-}
 
 class ShimmerServer {
   final int port;
@@ -113,32 +16,33 @@ class ShimmerServer {
   ShimmerServer({this.port = 3000, int ticksPerSecond = 10})
       : msPerTick = 1000 ~/ ticksPerSecond;
 
-  PlayerEntity? playerEntityForClient(String socketId) {
+  Entity? playerEntityForClient(String socketId) {
     var entityId = activeClients[socketId];
     if (entityId != null) {
-      return game.entities
-          .whereType<PlayerEntity>()
-          .firstWhere((element) => element.id == entityId);
+      return game.entities.firstWhere((element) => element.id == entityId);
     }
     return null;
   }
 
-  PlayerEntity createPlayer(String socketId) {
+  Entity createPlayer(String socketId) {
     var entityId = Uuid().v1();
-    var entity = PlayerEntity(
+    var entity = Entity(
       id: entityId,
       position: game.map.randomPosition(),
       size: ISize(10, 10),
+      angle: 0.0,
+      speed: 5.0,
+      action: Action.idle,
     );
     game.entities.add(entity);
     activeClients[socketId] = entityId;
     return entity;
   }
 
-  void connectClient(String socketId) {
+  String connectClient(String socketId) {
     var existingEntity = playerEntityForClient(socketId);
     assert(existingEntity == null);
-    createPlayer(socketId);
+    return createPlayer(socketId).id;
   }
 
   void disconnectClient(String socketId) {
@@ -150,7 +54,10 @@ class ShimmerServer {
     var io = Server();
     io.on('connection', (client) {
       // FIXME: Use some an explicit connect message instead.
-      connectClient(client.id);
+      var entityId = connectClient(client.id);
+      client.emit('connected', {
+        'entity_id': entityId,
+      });
 
       client.on('move_player_to', (data) {
         var position = IPoint.fromJson(jsonDecode(data));
@@ -163,17 +70,10 @@ class ShimmerServer {
     });
     io.listen(port);
 
-    game.initialize();
     Timer.periodic(Duration(milliseconds: msPerTick), (timer) {
       game.tick();
       for (var client in io.sockets.sockets) {
-        client.emit(
-            "tick",
-            jsonEncode(NetClientUpdate(
-              playerEntityId: playerEntityForClient(client.id)!.id,
-              entities:
-                  game.entities.map((entity) => entity.toNetEntity()).toList(),
-            ).toJson()));
+        client.emit("tick", jsonEncode(game.toNet().toJson()));
       }
     });
   }

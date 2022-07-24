@@ -2,5 +2,5 @@ import 'package:flutter/material.dart';
 import 'game.dart';
 
 void main() {
-  runApp(const MyGame());
+  runApp(const ShimmerMain());
 }

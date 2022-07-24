@@ -4,6 +4,9 @@ import 'package:flame/game.dart';
 import 'package:flame/events.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import 'package:shimmer2_client/game.dart';
+
+import 'package:shimmer2_shared/shimmer2_shared.dart';
 
 class TapIndicator extends PositionComponent {
   static final _paint = Paint()..color = const Color.fromARGB(255, 0, 200, 145);
@@ -28,26 +31,44 @@ class TapIndicator extends PositionComponent {
 }
 
 abstract class ServerControlledComponent extends PositionComponent {
-  ServerControlledComponent({super.size, super.anchor, super.position});
+  ServerControlledComponent(
+      {super.size, super.anchor, super.position, super.angle});
 }
 
 class DummyRenderer extends ServerControlledComponent {
   static final _paint = Paint()
     ..color = const Color.fromARGB(255, 200, 40, 168);
 
-  DummyRenderer({super.position, required super.size})
+  DummyRenderer({super.position, required super.size, super.angle})
       : super(anchor: Anchor.center);
 
   @override
   Future<void>? onLoad() {
-    add(CircleComponent(
-      radius: width / 2,
+    add(TriangleComponent(
+      size: size,
       paint: _paint,
       position: size / 2,
-      anchor: Anchor.center,
     ));
     return super.onLoad();
   }
+}
+
+class TriangleComponent extends PolygonComponent {
+  TriangleComponent({
+    required Vector2 size,
+    required Vector2 position,
+    required Paint paint,
+  }) : super(
+          [
+            Vector2(0, 1),
+            Vector2(-1, -1),
+            Vector2(1, -1),
+          ],
+          size: size,
+          position: position,
+          anchor: Anchor.center,
+          paint: paint,
+        );
 }
 
 class PlayerRenderer extends ServerControlledComponent {
@@ -58,18 +79,17 @@ class PlayerRenderer extends ServerControlledComponent {
 
   @override
   Future<void>? onLoad() {
-    add(RectangleComponent.square(
-      size: width,
+    add(TriangleComponent(
+      size: size,
       paint: _paint,
       position: size / 2,
-      anchor: Anchor.center,
     ));
     return super.onLoad();
   }
 }
 
 class PlayerComponent extends ServerControlledComponent {
-  PlayerComponent({super.position, required super.size})
+  PlayerComponent({super.position, required super.size, super.angle})
       : super(anchor: Anchor.center);
 
   @override
@@ -80,26 +100,28 @@ class PlayerComponent extends ServerControlledComponent {
 }
 
 abstract class PlayerActions {
-  void movePlayerTo(Vector2 position);
+  void movePlayerTo(IPoint position);
 }
 
-class ShimmerGame extends FlameGame with TapDetector {
-  PlayerActions actions;
+class ShimmerRenderer extends FlameGame with TapDetector {
+  final UnitSystem unitSystem;
+  final PlayerActions actions;
   late PlayerComponent playerComponent;
-  final double worldSize;
 
-  ShimmerGame({required this.actions, required this.worldSize});
+  ShimmerRenderer({required this.actions, required this.unitSystem});
 
   @override
   Future<void> onLoad() async {
-    camera.viewport = FixedResolutionViewport(Vector2.all(worldSize));
+    camera.viewport =
+        FixedResolutionViewport(Vector2.all(unitSystem.renderSize.x));
   }
 
   @override
   void onTapUp(TapUpInfo info) {
     var gamePosition = info.eventPosition.game;
     add(TapIndicator(position: gamePosition));
-    actions.movePlayerTo(gamePosition);
+    var serverPosition = unitSystem.fromRenderPointToGame(gamePosition);
+    actions.movePlayerTo(serverPosition);
     super.onTapUp(info); // Should this call super?
   }
 }
