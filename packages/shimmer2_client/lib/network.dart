@@ -59,4 +59,8 @@ class ServerConnection {
       callback(entities);
     });
   }
+
+  void dispose() {
+    socket.dispose();
+  }
 }

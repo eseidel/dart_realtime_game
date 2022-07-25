@@ -72,3 +72,10 @@ another entity.  Maybe they're pre-coded buffs applied to the entities?  e.g. "d
 ## ECS
 * Entity component system would have entities just have an id and a shape.
 * Shapes would then hold components.
+
+
+## Dealing with Time
+* Server is always behind client.
+* Client and server both run same simulation with numbered ticks.
+* If client ever recieves tick ahead of current, updates to that tick as present.
+* if client recieves tick behind current, resimulates from that tick.

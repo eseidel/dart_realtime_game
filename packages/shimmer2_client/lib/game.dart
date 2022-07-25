@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart' as widgets;
+import 'package:flutter/scheduler.dart';
 import 'package:flame/game.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
@@ -141,24 +142,25 @@ class ShimmerMain extends widgets.StatefulWidget {
 // Main class of the game.  Starts the network connection, keeps hold of the
 // local client state and the renderer and keeps them in sync.
 class _ShimmerMainState extends widgets.State<ShimmerMain>
+    with widgets.SingleTickerProviderStateMixin<ShimmerMain>
     implements PlayerActions {
-  late ServerConnection connection;
+  late ServerConnection _connection;
   late ClientGameModel gameModel = ClientGameModel();
   String? playerEntityId;
   widgets.GlobalKey<_RenderTreeState> _renderTreeKey = widgets.GlobalKey();
+  late Ticker _idleTicker;
 
   @override
   void initState() {
-    connection = ServerConnection(Uri.parse('http://localhost:3000'));
-    connection.onUpdateFromServer((update) {
-      // Is this setState necessary?
-      setState(() {
-        gameModel.processUpdateFromServer(update);
-        _renderTreeKey.currentState
-            ?.updateToGameState(gameModel.lastStateFromServer);
-      });
+    _idleTicker = createTicker((elapsed) {
+      _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
+    })
+      ..start();
+    _connection = ServerConnection(Uri.parse('http://localhost:3000'));
+    _connection.onUpdateFromServer((update) {
+      gameModel.processUpdateFromServer(update);
     });
-    connection.onSetPlayerEntityId((playerEntityId) {
+    _connection.onSetPlayerEntityId((playerEntityId) {
       setState(() {
         this.playerEntityId = playerEntityId;
       });
@@ -167,9 +169,16 @@ class _ShimmerMainState extends widgets.State<ShimmerMain>
   }
 
   @override
+  void dispose() {
+    _idleTicker.dispose();
+    _connection.dispose();
+    super.dispose();
+  }
+
+  @override
   void movePlayerTo(IPoint position) {
     // TODO: Should this clamp to the map size?
-    connection.socket.emit('move_player_to', jsonEncode(position));
+    _connection.socket.emit('move_player_to', jsonEncode(position));
   }
 
   @override
@@ -183,9 +192,22 @@ class _ShimmerMainState extends widgets.State<ShimmerMain>
 }
 
 class ClientGameModel {
-  GameState lastStateFromServer = const GameState.empty();
+  GameState lastStateFromServer = GameState(
+    entities: [],
+    tickNumber: 0,
+    clientTime: DateTime.now(),
+  );
 
   void processUpdateFromServer(NetGameState state) {
     lastStateFromServer = GameState.fromNet(state);
+  }
+
+  GameState get projectedState {
+    // Figure out how far ahead of lastStateFromServer we are.
+    var deltaFromLastTick =
+        DateTime.now().difference(lastStateFromServer.clientTime!);
+    // Apply any local inputs.
+    // Play forward from lastStateFromServer to now.
+    return lastStateFromServer.playedForward(deltaFromLastTick);
   }
 }

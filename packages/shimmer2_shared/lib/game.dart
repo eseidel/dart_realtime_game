@@ -109,12 +109,38 @@ class MoveTowards<T extends Movable> {
 
 // Immutable GameState
 class GameState {
+  final int tickNumber;
+  final DateTime? serverTime;
+  final DateTime? clientTime;
+
   final List<Entity> entities;
 
-  const GameState.empty() : entities = const [];
+  GameState({
+    required this.tickNumber,
+    required this.entities,
+    this.serverTime,
+    this.clientTime,
+  });
+
+  GameState playedForward(Duration delta) {
+    var newEntities = List<Entity>.from(entities);
+    // If delta is more than tick time, we need to play multiple ticks.
+    for (var entity in newEntities) {
+      entity.update(delta.inMilliseconds / 1000);
+    }
+    return GameState(
+      // Should this have a tick number?
+      tickNumber: tickNumber + 1,
+      entities: newEntities,
+      clientTime: DateTime.now(),
+    );
+  }
 
   GameState.fromNet(NetGameState net)
-      : entities = net.entities.map((e) => Entity.fromNet(e)).toList();
+      : tickNumber = net.tickNumber,
+        serverTime = net.serverTime,
+        clientTime = DateTime.now(),
+        entities = net.entities.map((e) => Entity.fromNet(e)).toList();
 }
 
 // Mutable Game
@@ -122,9 +148,10 @@ class GameState {
 class Game {
   GameMap map = GameMap();
   List<Entity> entities = [];
+  int tickNumber = 0;
   Duration tickDuration;
 
-  static const serverTicksPerSecond = 30;
+  static const serverTicksPerSecond = 10;
 
   Game({int ticksPerSecond = serverTicksPerSecond})
       : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond);
@@ -132,10 +159,13 @@ class Game {
   double secondsPerTick() => tickDuration.inMilliseconds / 1000;
 
   NetGameState toNet() => NetGameState(
+        tickNumber: tickNumber,
+        serverTime: DateTime.now(),
         entities: entities.map((entity) => entity.toNet()).toList(),
       );
 
   void tick() {
+    tickNumber++;
     for (var entity in entities) {
       entity.update(secondsPerTick());
     }
