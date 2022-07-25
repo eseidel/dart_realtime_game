@@ -18,6 +18,10 @@ class IPoint {
   operator -(IPoint other) => ISize(x - other.x, y - other.y);
   operator +(ISize other) => IPoint(x + other.width, y + other.height);
 
+  IPoint.fromVector2(Vector2 vector)
+      : x = vector.x.toInt(),
+        y = vector.y.toInt();
+
   Vector2 toVector2() => Vector2(x.toDouble(), y.toDouble());
 
   @override

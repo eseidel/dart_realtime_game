@@ -192,22 +192,30 @@ class _ShimmerMainState extends widgets.State<ShimmerMain>
 }
 
 class ClientGameModel {
-  GameState lastStateFromServer = GameState(
+  GameState _lastStateFromServer = GameState(
+    entities: [],
+    tickNumber: 0,
+    clientTime: DateTime.now(),
+  );
+
+  GameState _lastProjection = GameState(
     entities: [],
     tickNumber: 0,
     clientTime: DateTime.now(),
   );
 
   void processUpdateFromServer(NetGameState state) {
-    lastStateFromServer = GameState.fromNet(state);
+    _lastStateFromServer = GameState.fromNet(state);
+    _lastProjection = _lastStateFromServer;
+    // apply local inputs to projected state?
   }
 
   GameState get projectedState {
     // Figure out how far ahead of lastStateFromServer we are.
     var deltaFromLastTick =
-        DateTime.now().difference(lastStateFromServer.clientTime!);
+        DateTime.now().difference(_lastProjection.clientTime!);
+    _lastProjection = _lastProjection.playedForward(deltaFromLastTick);
     // Apply any local inputs.
-    // Play forward from lastStateFromServer to now.
-    return lastStateFromServer.playedForward(deltaFromLastTick);
+    return _lastProjection;
   }
 }

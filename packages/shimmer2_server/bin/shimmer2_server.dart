@@ -31,7 +31,7 @@ class ShimmerServer {
       position: game.map.randomPosition(),
       size: ISize(10, 10),
       angle: 0.0,
-      speed: 300.0,
+      speed: 20.0,
       action: Action.idle,
     );
     game.entities.add(entity);

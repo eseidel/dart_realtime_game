@@ -25,7 +25,7 @@ class Entity implements Movable {
   @override
   double speed;
   Action action;
-  late MoveTowards mover;
+  late MoveTowards? mover;
 
   Entity({
     required this.id,
@@ -44,9 +44,8 @@ class Entity implements Movable {
         size = net.size,
         angle = net.angle,
         speed = net.speed,
-        action = net.action {
-    mover = MoveTowards(this);
-  }
+        action = net.action,
+        mover = null;
 
   NetEntity toNet() => NetEntity(
         id: id,
@@ -61,12 +60,21 @@ class Entity implements Movable {
   Map<String, dynamic> toJson() => toNet().toJson();
 
   void moveTo(IPoint position) {
-    mover.destination = position;
+    mover?.destination = position;
   }
 
   void update(double delta) {
     // if on client, only for client_id = me.
-    mover.update(delta);
+    if (mover != null) {
+      mover!.update(delta);
+    } else {
+      // dead reconing.
+      if (action == Action.moving) {
+        var heading = Vector2(cos(angle), sin(angle));
+        heading.scale(speed * delta);
+        position = IPoint.fromVector2(position.toVector2() + heading);
+      }
+    }
   }
 }
 
@@ -151,7 +159,7 @@ class Game {
   int tickNumber = 0;
   Duration tickDuration;
 
-  static const serverTicksPerSecond = 10;
+  static const serverTicksPerSecond = 1;
 
   Game({int ticksPerSecond = serverTicksPerSecond})
       : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond);
