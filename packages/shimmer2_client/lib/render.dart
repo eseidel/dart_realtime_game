@@ -16,11 +16,7 @@ class TapIndicator extends PositionComponent {
   @override
   void onMount() {
     super.onMount();
-    add(CircleComponent(
-      radius: 3,
-      paint: _paint,
-      anchor: Anchor.center,
-    ));
+    add(CircleComponent(radius: 3, paint: _paint, anchor: Anchor.center));
     add(
       SequenceEffect([
         ScaleEffect.to(Vector2.zero(), EffectController(duration: 0.2)),
@@ -44,11 +40,7 @@ class DummyRenderer extends ServerControlledComponent {
 
   @override
   Future<void>? onLoad() {
-    add(TriangleComponent(
-      size: size,
-      paint: _paint,
-      position: size / 2,
-    ));
+    add(TriangleComponent(size: size, paint: _paint, position: size / 2));
     return super.onLoad();
   }
 }
@@ -59,11 +51,7 @@ class TriangleComponent extends PolygonComponent {
     required Vector2 position,
     required Paint paint,
   }) : super(
-          [
-            Vector2(0, 1),
-            Vector2(-1, -1),
-            Vector2(1, -1),
-          ],
+          [Vector2(0, 1), Vector2(-1, -1), Vector2(1, -1)],
           size: size,
           position: position,
           anchor: Anchor.center,
