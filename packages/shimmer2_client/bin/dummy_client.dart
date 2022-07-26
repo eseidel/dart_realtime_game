@@ -10,7 +10,7 @@ void main() {
 
   socket.on('connect', (_) {
     int pointIndex = 0;
-    final ISize size = ISize(100, 100);
+    const ISize size = ISize(1000, 1000);
     var points = [
       IPoint(size.xPercent(.5), size.yPercent(.25)),
       IPoint(size.xPercent(.75), size.yPercent(.5)),

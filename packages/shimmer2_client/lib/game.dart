@@ -61,8 +61,8 @@ class RenderTree extends widgets.StatefulWidget {
 class _RenderTreeState extends widgets.State<RenderTree> {
   late ShimmerRenderer renderer;
   final UnitSystem unitSystem = UnitSystem(
-    gameSize: const ISize(100, 100),
-    renderSize: Vector2(200, 200),
+    gameSize: const ISize(1000, 1000),
+    renderSize: Vector2(1000, 1000),
   );
   Map<String, ServerControlledComponent> entityMap = {};
 
@@ -95,6 +95,7 @@ class _RenderTreeState extends widgets.State<RenderTree> {
     component.size = unitSystem.fromGameSizeToRender(entity.size);
     component.position = unitSystem.fromGamePointToRender(entity.position);
     component.angle = entity.angle;
+    print(entity.angle);
   }
 
   void removeRendererFor(String id) {
@@ -147,7 +148,8 @@ class _ShimmerMainState extends widgets.State<ShimmerMain>
   late ServerConnection _connection;
   late ClientGameModel gameModel = ClientGameModel();
   String? playerEntityId;
-  widgets.GlobalKey<_RenderTreeState> _renderTreeKey = widgets.GlobalKey();
+  final widgets.GlobalKey<_RenderTreeState> _renderTreeKey =
+      widgets.GlobalKey();
   late Ticker _idleTicker;
 
   @override
@@ -214,7 +216,10 @@ class ClientGameModel {
     // Figure out how far ahead of lastStateFromServer we are.
     var deltaFromLastTick =
         DateTime.now().difference(_lastProjection.clientTime!);
-    _lastProjection = _lastProjection.playedForward(deltaFromLastTick);
+    // Avoid ticks too small to get lost in integer math.
+    if (deltaFromLastTick.inMilliseconds > 30) {
+      _lastProjection = _lastProjection.playedForward(deltaFromLastTick);
+    }
     // Apply any local inputs.
     return _lastProjection;
   }

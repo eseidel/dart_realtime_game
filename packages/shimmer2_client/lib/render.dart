@@ -32,7 +32,9 @@ abstract class ServerControlledComponent extends PositionComponent {
 }
 
 class DummyRenderer extends ServerControlledComponent {
-  static final _paint = Paint()
+  static final _outerPaint = Paint()
+    ..color = const Color.fromARGB(255, 200, 184, 40);
+  static final _innerPaint = Paint()
     ..color = const Color.fromARGB(255, 200, 40, 168);
 
   DummyRenderer({super.position, required super.size, super.angle})
@@ -40,7 +42,12 @@ class DummyRenderer extends ServerControlledComponent {
 
   @override
   Future<void>? onLoad() {
-    add(TriangleComponent(size: size, paint: _paint, position: size / 2));
+    var outer =
+        TriangleComponent(size: size, paint: _outerPaint, position: size / 2);
+    var inner = TriangleComponent(
+        size: size / 2, position: Vector2.zero(), paint: _innerPaint);
+    outer.add(inner);
+    add(outer);
     return super.onLoad();
   }
 }
@@ -50,9 +57,9 @@ class TriangleComponent extends PolygonComponent {
     required Vector2 size,
     required Vector2 position,
     required Paint paint,
-  }) : super(
+  }) : super.relative(
           [Vector2(0, 1), Vector2(-1, -1), Vector2(1, -1)],
-          size: size,
+          parentSize: size,
           position: position,
           anchor: Anchor.center,
           paint: paint,
@@ -60,18 +67,25 @@ class TriangleComponent extends PolygonComponent {
 }
 
 class PlayerRenderer extends ServerControlledComponent {
-  static final _paint = Paint()..color = const Color.fromARGB(255, 40, 200, 40);
+  static final _outerPaint = Paint()
+    ..color = const Color.fromARGB(255, 40, 200, 40);
+  static final _innerPaint = Paint()
+    ..color = const Color.fromARGB(255, 200, 40, 168);
 
   PlayerRenderer({required double size, super.position})
       : super(size: Vector2(size, size), anchor: Anchor.center);
 
   @override
   Future<void>? onLoad() {
-    add(TriangleComponent(
-      size: size,
-      paint: _paint,
-      position: size / 2,
-    ));
+    var outer =
+        TriangleComponent(size: size, paint: _outerPaint, position: size / 2);
+    var inner = TriangleComponent(
+      size: size / 2,
+      position: Vector2.zero(),
+      paint: _innerPaint,
+    );
+    outer.add(inner);
+    add(outer);
     return super.onLoad();
   }
 }
@@ -100,6 +114,7 @@ class ShimmerRenderer extends FlameGame with TapDetector {
 
   @override
   Future<void> onLoad() async {
+    // debugMode = true;
     camera.viewport =
         FixedResolutionViewport(Vector2.all(unitSystem.renderSize.x));
   }

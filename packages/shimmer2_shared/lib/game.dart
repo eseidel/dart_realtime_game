@@ -3,7 +3,7 @@ import 'network.dart';
 import 'dart:math';
 
 class GameMap {
-  final ISize size = ISize(100, 100);
+  final ISize size = ISize(1000, 1000);
 
   IPoint randomPosition() {
     var random = Random();
@@ -21,7 +21,7 @@ class Entity implements Movable {
   @override
   IPoint position;
   ISize size;
-  double angle;
+  double angle; // radians
   @override
   double speed;
   Action action;
@@ -63,6 +63,10 @@ class Entity implements Movable {
     mover?.destination = position;
   }
 
+  // Vector2 unitVector() {
+  //   return Vector2(-cos(angle), sin(angle));
+  // }
+
   void update(double delta) {
     // if on client, only for client_id = me.
     if (mover != null) {
@@ -70,9 +74,11 @@ class Entity implements Movable {
     } else {
       // dead reconing.
       if (action == Action.moving) {
-        var heading = Vector2(cos(angle), sin(angle));
+        var heading = Vector2(-cos(angle), -sin(angle));
+        // print(heading);
         heading.scale(speed * delta);
         position = IPoint.fromVector2(position.toVector2() + heading);
+        // print("scaled: $heading position: $position");
       }
     }
   }
@@ -81,7 +87,7 @@ class Entity implements Movable {
 abstract class Movable {
   IPoint get position;
   set position(IPoint newPosition);
-  set angle(double angle);
+  set angle(double angleRadians);
   set action(Action action);
 
   double get speed;
@@ -100,11 +106,11 @@ class MoveTowards<T extends Movable> {
 
   void update(double timeDelta) {
     Vector2 delta = (destination - delegate.position).toVector2();
-    delegate.angle = delta.angleTo(upVector);
 
     double speed = delegate.speed * timeDelta;
     // This makes it stop when it gets there.
     if (delta.length > speed) {
+      delegate.angle = upVector.angleToSigned(delta);
       delta.normalize();
       delta *= speed;
       delegate.action = Action.moving;
@@ -159,9 +165,7 @@ class Game {
   int tickNumber = 0;
   Duration tickDuration;
 
-  static const serverTicksPerSecond = 1;
-
-  Game({int ticksPerSecond = serverTicksPerSecond})
+  Game({required int ticksPerSecond})
       : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond);
 
   double secondsPerTick() => tickDuration.inMilliseconds / 1000;
