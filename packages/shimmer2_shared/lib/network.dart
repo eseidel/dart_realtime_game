@@ -3,8 +3,8 @@ import 'game.dart';
 
 class NetEntity {
   final String id;
-  IPoint position;
-  ISize size;
+  Vector2 position;
+  Vector2 size;
   double angle;
   double speed;
   Action action;
@@ -22,8 +22,8 @@ class NetEntity {
         'id': id,
         'x': position.x,
         'y': position.y,
-        'width': size.width,
-        'height': size.height,
+        'width': size.x,
+        'height': size.y,
         'angle': angle,
         'action': action.name,
         'speed': speed,
@@ -31,8 +31,8 @@ class NetEntity {
 
   NetEntity.fromJson(Map<String, dynamic> json)
       : id = json['id'],
-        size = ISize(json['width'], json['height']),
-        position = IPoint(json['x'], json['y']),
+        size = Vector2(json['width'], json['height']),
+        position = Vector2(json['x'], json['y']),
         angle = json['angle'],
         speed = json['speed'],
         action = Action.values.byName(json['action']);

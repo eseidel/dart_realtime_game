@@ -28,9 +28,9 @@ class ShimmerServer {
     var entity = Entity(
       id: entityId,
       position: game.map.randomPosition(),
-      size: ISize(10, 10),
+      size: Vector2(10, 10),
       angle: 0.0,
-      speed: 0,
+      speed: 20,
       action: Action.idle,
     );
     game.entities.add(entity);
@@ -59,7 +59,7 @@ class ShimmerServer {
       });
 
       client.on('move_player_to', (data) {
-        var position = IPoint.fromJson(jsonDecode(data));
+        var position = Vector2(data['x'], data['y']);
         playerEntityForClient(client.id)?.moveTo(position);
       });
 

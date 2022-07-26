@@ -9,39 +9,6 @@ import 'package:shimmer2_shared/shimmer2_shared.dart';
 import 'network.dart';
 import 'render.dart';
 
-typedef ServerPosition = IPoint;
-
-class UnitSystem {
-  final ISize gameSize;
-  final Vector2 renderSize;
-
-  final double gameToRender;
-  final double renderToGame;
-
-  UnitSystem({required this.gameSize, required this.renderSize})
-      : gameToRender = renderSize.x / gameSize.width,
-        renderToGame = gameSize.width / renderSize.x;
-  // Could assert that height scale matches.
-
-  double scale(int value, double scale) => value * scale;
-  int scaleAndFloor(double value, double scale) => (value * scale).floor();
-
-  double toRender(int value) => scale(value, renderToGame);
-  int toGame(double value) => scaleAndFloor(value, gameToRender);
-
-  ServerPosition fromRenderPointToGame(Vector2 game) {
-    return ServerPosition(toGame(game.x), toGame(game.y));
-  }
-
-  Vector2 fromGamePointToRender(IPoint game) {
-    return Vector2(toRender(game.x), toRender(game.y));
-  }
-
-  Vector2 fromGameSizeToRender(ISize game) {
-    return Vector2(toRender(game.width), toRender(game.height));
-  }
-}
-
 class RenderTree extends widgets.StatefulWidget {
   final PlayerActions actions;
   final String? playerEntityId; // entity we're controlling
@@ -60,10 +27,6 @@ class RenderTree extends widgets.StatefulWidget {
 // to the renderer (the FlameGame object).
 class _RenderTreeState extends widgets.State<RenderTree> {
   late ShimmerRenderer renderer;
-  final UnitSystem unitSystem = UnitSystem(
-    gameSize: const ISize(1000, 1000),
-    renderSize: Vector2(1000, 1000),
-  );
   Map<String, ServerControlledComponent> entityMap = {};
 
   ServerControlledComponent _createRendererInner(Entity entity) {
@@ -71,14 +34,14 @@ class _RenderTreeState extends widgets.State<RenderTree> {
     // based on entity type, not just which one we're controlling.
     if (entity.id == widget.playerEntityId) {
       return PlayerComponent(
-        size: unitSystem.fromGameSizeToRender(entity.size),
-        position: unitSystem.fromGamePointToRender(entity.position),
+        size: entity.size,
+        position: entity.position,
         angle: entity.angle,
       );
     }
     return DummyRenderer(
-      size: unitSystem.fromGameSizeToRender(entity.size),
-      position: unitSystem.fromGamePointToRender(entity.position),
+      size: entity.size,
+      position: entity.position,
       angle: entity.angle,
     );
   }
@@ -92,10 +55,9 @@ class _RenderTreeState extends widgets.State<RenderTree> {
   }
 
   void updateRenderer(Entity entity, ServerControlledComponent component) {
-    component.size = unitSystem.fromGameSizeToRender(entity.size);
-    component.position = unitSystem.fromGamePointToRender(entity.position);
+    component.size = entity.size;
+    component.position = entity.position;
     component.angle = entity.angle;
-    print(entity.angle);
   }
 
   void removeRendererFor(String id) {
@@ -123,7 +85,9 @@ class _RenderTreeState extends widgets.State<RenderTree> {
 
   @override
   void initState() {
-    renderer = ShimmerRenderer(actions: widget.actions, unitSystem: unitSystem);
+    // FIXME: Get gameSize from server.
+    var gameSize = Vector2(1000, 1000);
+    renderer = ShimmerRenderer(actions: widget.actions, gameSize: gameSize);
     super.initState();
   }
 
@@ -178,9 +142,10 @@ class _ShimmerMainState extends widgets.State<ShimmerMain>
   }
 
   @override
-  void movePlayerTo(IPoint position) {
+  void movePlayerTo(Vector2 position) {
     // TODO: Should this clamp to the map size?
-    _connection.socket.emit('move_player_to', jsonEncode(position));
+    _connection.socket
+        .emit('move_player_to', {'x': position.x, 'y': position.y});
   }
 
   @override

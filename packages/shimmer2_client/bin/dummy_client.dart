@@ -10,12 +10,12 @@ void main() {
 
   socket.on('connect', (_) {
     int pointIndex = 0;
-    const ISize size = ISize(1000, 1000);
+    Vector2 size = Vector2(1000, 1000);
     var points = [
-      IPoint(size.xPercent(.5), size.yPercent(.25)),
-      IPoint(size.xPercent(.75), size.yPercent(.5)),
-      IPoint(size.xPercent(.5), size.yPercent(.75)),
-      IPoint(size.xPercent(.25), size.yPercent(.5)),
+      Vector2(.5, .25)..multiply(size),
+      Vector2(.75, .5)..multiply(size),
+      Vector2(.5, .75)..multiply(size),
+      Vector2(.25, .5)..multiply(size),
     ];
 
     var timer = Timer.periodic(const Duration(seconds: 2), (timer) {

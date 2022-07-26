@@ -4,9 +4,6 @@ import 'package:flame/game.dart';
 import 'package:flame/events.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:shimmer2_client/game.dart';
-
-import 'package:shimmer2_shared/shimmer2_shared.dart';
 
 class TapIndicator extends PositionComponent {
   static final _paint = Paint()..color = const Color.fromARGB(255, 0, 200, 145);
@@ -102,29 +99,27 @@ class PlayerComponent extends ServerControlledComponent {
 }
 
 abstract class PlayerActions {
-  void movePlayerTo(IPoint position);
+  void movePlayerTo(Vector2 position);
 }
 
 class ShimmerRenderer extends FlameGame with TapDetector {
-  final UnitSystem unitSystem;
   final PlayerActions actions;
   late PlayerComponent playerComponent;
+  final Vector2 gameSize;
 
-  ShimmerRenderer({required this.actions, required this.unitSystem});
+  ShimmerRenderer({required this.actions, required this.gameSize});
 
   @override
   Future<void> onLoad() async {
     // debugMode = true;
-    camera.viewport =
-        FixedResolutionViewport(Vector2.all(unitSystem.renderSize.x));
+    camera.viewport = FixedResolutionViewport(gameSize);
   }
 
   @override
   void onTapUp(TapUpInfo info) {
     var gamePosition = info.eventPosition.game;
     add(TapIndicator(position: gamePosition));
-    var serverPosition = unitSystem.fromRenderPointToGame(gamePosition);
-    actions.movePlayerTo(serverPosition);
+    actions.movePlayerTo(gamePosition);
     super.onTapUp(info); // Should this call super?
   }
 }

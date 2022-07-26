@@ -3,11 +3,11 @@ import 'network.dart';
 import 'dart:math';
 
 class GameMap {
-  final ISize size = ISize(1000, 1000);
+  final Vector2 size = Vector2(1000, 1000);
 
-  IPoint randomPosition() {
+  Vector2 randomPosition() {
     var random = Random();
-    return IPoint(random.nextInt(size.width), random.nextInt(size.height));
+    return Vector2(random.nextDouble() * size.x, random.nextDouble() * size.y);
   }
 }
 
@@ -19,8 +19,8 @@ enum Action {
 class Entity implements Movable {
   final String id;
   @override
-  IPoint position;
-  ISize size;
+  Vector2 position;
+  Vector2 size;
   double angle; // radians
   @override
   double speed;
@@ -59,7 +59,7 @@ class Entity implements Movable {
   // Convenience
   Map<String, dynamic> toJson() => toNet().toJson();
 
-  void moveTo(IPoint position) {
+  void moveTo(Vector2 position) {
     mover?.destination = position;
   }
 
@@ -77,7 +77,7 @@ class Entity implements Movable {
         var heading = Vector2(-cos(angle), -sin(angle));
         // print(heading);
         heading.scale(speed * delta);
-        position = IPoint.fromVector2(position.toVector2() + heading);
+        position += heading;
         // print("scaled: $heading position: $position");
       }
     }
@@ -85,8 +85,8 @@ class Entity implements Movable {
 }
 
 abstract class Movable {
-  IPoint get position;
-  set position(IPoint newPosition);
+  Vector2 get position;
+  set position(Vector2 newPosition);
   set angle(double angleRadians);
   set action(Action action);
 
@@ -96,16 +96,16 @@ abstract class Movable {
 // Some sort of movement class which given a destination point will move towards it.
 class MoveTowards<T extends Movable> {
   final T delegate;
-  IPoint destination;
+  Vector2 destination;
 
   MoveTowards(this.delegate) : destination = delegate.position;
 
-  set desintation(IPoint newDestination) {
+  set desintation(Vector2 newDestination) {
     destination = newDestination;
   }
 
   void update(double timeDelta) {
-    Vector2 delta = (destination - delegate.position).toVector2();
+    Vector2 delta = destination - delegate.position;
 
     double speed = delegate.speed * timeDelta;
     // This makes it stop when it gets there.
@@ -117,7 +117,7 @@ class MoveTowards<T extends Movable> {
     } else {
       delegate.action = Action.idle;
     }
-    delegate.position += ISize.fromVector2(delta);
+    delegate.position += delta;
   }
 }
 
