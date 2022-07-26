@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "shimmer2_client",
+            "cwd": "packages/shimmer2_client",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "shimmer2_client (profile mode)",
+            "cwd": "packages/shimmer2_client",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "shimmer2_client (release mode)",
+            "cwd": "packages/shimmer2_client",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "shimmer2_server",
+            "cwd": "packages/shimmer2_server",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}
