@@ -3,7 +3,7 @@
 
 # TODO
 * Replace GameState with Entity Component System.
-* Replace Flame with canvas.
+* Replace Flame with canvas. (Need a way to do tap animation.)
 * Make rendering layer interpolate from GameState.
 * Prediction logic should only predict on server ticks, not interpolate.
 * Remove all uses of DateTime.now().
