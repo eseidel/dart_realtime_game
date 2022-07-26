@@ -4,11 +4,9 @@
 # TODO
 * Replace GameState with Entity Component System.
 * Replace Flame with canvas.
-* Move to doubles for entity positions.
 * Make rendering layer interpolate from GameState.
 * Prediction logic should only predict on server ticks, not interpolate.
 * Remove all uses of DateTime.now().
-* Move serverTime to ticks.
 * Move clientTime to Duration.
 * Only time clientTime can be accessed is through tick callback elapsed.
 

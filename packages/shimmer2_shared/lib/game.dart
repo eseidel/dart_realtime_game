@@ -124,7 +124,6 @@ class MoveTowards<T extends Movable> {
 // Immutable GameState
 class GameState {
   final int tickNumber;
-  final DateTime? serverTime;
   final DateTime? clientTime;
 
   final List<Entity> entities;
@@ -132,7 +131,6 @@ class GameState {
   GameState({
     required this.tickNumber,
     required this.entities,
-    this.serverTime,
     this.clientTime,
   });
 
@@ -152,7 +150,6 @@ class GameState {
 
   GameState.fromNet(NetGameState net)
       : tickNumber = net.tickNumber,
-        serverTime = net.serverTime,
         clientTime = DateTime.now(),
         entities = net.entities.map((e) => Entity.fromNet(e)).toList();
 }
@@ -172,7 +169,6 @@ class Game {
 
   NetGameState toNet() => NetGameState(
         tickNumber: tickNumber,
-        serverTime: DateTime.now(),
         entities: entities.map((entity) => entity.toNet()).toList(),
       );
 
