@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/widgets.dart' as widgets;
 import 'package:flutter/scheduler.dart';
 import 'package:flame/game.dart';
