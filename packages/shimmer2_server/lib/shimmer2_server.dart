@@ -1,66 +1,78 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:socket_io/socket_io.dart';
-import 'package:uuid/uuid.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
+
+class PlayerState {
+  Entity hero;
+  Entity player;
+
+  PlayerState(this.hero, this.player);
+}
 
 class ShimmerServer {
   final int port;
   // FIXME: Not sure this map is needed, could just store the extra data
   // on the ServerEntities?
-  final Map<String, String> activeClients = {};
+  final Map<String, PlayerState> activeClients = {};
   final Game game;
 
   ShimmerServer({this.port = 3000, int ticksPerSecond = 1})
       : game = Game(ticksPerSecond: ticksPerSecond);
 
-  Entity? playerEntityForClient(String socketId) {
-    var entityId = activeClients[socketId];
-    if (entityId == null) {
-      return null;
-    }
-    return game.entities.firstWhere((element) => element.id == entityId);
-  }
+  // Used to tell the client which entity is them so they can follow it with camera.
+  PlayerState? playerStateForClient(String socketId) => activeClients[socketId];
 
-  Entity createPlayer(String socketId) {
-    var entityId = Uuid().v1();
-    var entity = Entity(
-      id: entityId,
-      position: game.map.randomPosition(),
-      size: Vector2(10, 10),
-      angle: 0.0,
-      speed: 20,
-      action: Action.idle,
+  PlayerState createPlayer(String socketId) {
+    var hero = game.world.createEntity(ExecutionLocation.server);
+    hero.setComponent(
+      PhysicsComponent(
+        position: game.randomPosition(),
+        size: Vector2(10, 10),
+        angle: 0.0,
+        speed: 20,
+      ),
     );
-    game.entities.add(entity);
-    activeClients[socketId] = entityId;
-    return entity;
+
+    var player = game.world.createEntity(ExecutionLocation.server);
+    var playerState = PlayerState(hero, player);
+    activeClients[socketId] = playerState;
+    return playerState;
   }
 
-  String connectClient(String socketId) {
-    var existingEntity = playerEntityForClient(socketId);
-    assert(existingEntity == null);
-    return createPlayer(socketId).id;
+  PlayerState connectClient(String socketId) {
+    assert(playerStateForClient(socketId) == null);
+    return createPlayer(socketId);
   }
 
   void disconnectClient(String socketId) {
-    var entityId = activeClients.remove(socketId);
-    game.entities.removeWhere((element) => element.id == entityId);
+    final playerState = activeClients.remove(socketId)!;
+    game.world
+      ..destroyEntity(playerState.player)
+      ..destroyEntity(playerState.hero);
   }
 
   void start() {
     var io = Server();
     io.on('connection', (client) {
       // FIXME: Use some an explicit connect/login message instead.
-      var entityId = connectClient(client.id);
-      client.emit('connected', {
-        'entity_id': entityId,
-      });
+      var playerState = connectClient(client.id);
+      client.emit(
+        'connected',
+        NetJoinResponse(
+          game.match.id,
+          playerState.player.id,
+          playerState.hero.id,
+        ),
+      );
 
+      // FIXME: Generalize to an action queue.
       client.on('move_player_to', (data) {
         var position = Vector2(data['x'], data['y']);
-        playerEntityForClient(client.id)?.moveTo(position);
+        playerStateForClient(client.id)
+            ?.hero
+            .setComponent(DestinationComponent(location: position));
       });
 
       client.on('disconnect', (_) {

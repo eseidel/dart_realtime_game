@@ -1,189 +1,151 @@
 import 'package:flutter/widgets.dart' as widgets;
-import 'package:flutter/scheduler.dart';
-import 'package:flame/game.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
 
 import 'network.dart';
-import 'render.dart';
+import 'render_canvas.dart';
 
-class RenderTree extends widgets.StatefulWidget {
-  final PlayerActions actions;
-  final String? playerEntityId; // entity we're controlling
+class ClientState {
+  final World world;
 
-  const RenderTree({
-    super.key,
-    required this.actions,
-    this.playerEntityId,
+  // Singleton entity, which holds things like viewport.
+  final Entity match;
+  final Entity player;
+  final Entity hero;
+
+  ClientState({
+    required this.world,
+    required this.match,
+    required this.player,
+    required this.hero,
   });
 
-  @override
-  widgets.State<RenderTree> createState() => _RenderTreeState();
-}
-
-// Like Flutter's Element tree, this maps from the GameState
-// to the renderer (the FlameGame object).
-class _RenderTreeState extends widgets.State<RenderTree> {
-  late ShimmerRenderer renderer;
-  Map<String, ServerControlledComponent> entityMap = {};
-
-  ServerControlledComponent _createRendererInner(Entity entity) {
-    // FIXME: This is the wrong way to do this, we should create renderers
-    // based on entity type, not just which one we're controlling.
-    if (entity.id == widget.playerEntityId) {
-      return PlayerComponent(
-        size: entity.size,
-        position: entity.position,
-        angle: entity.angle,
-      );
-    }
-    return DummyRenderer(
-      size: entity.size,
-      position: entity.position,
-      angle: entity.angle,
-    );
-  }
-
-  ServerControlledComponent createRendererFor(Entity entity) {
-    print("createRendererFor ${entity.id}");
-    var component = _createRendererInner(entity);
-    renderer.add(component);
-    entityMap[entity.id] = component;
-    return component;
-  }
-
-  void updateRenderer(Entity entity, ServerControlledComponent component) {
-    component.size = entity.size;
-    component.position = entity.position;
-    component.angle = entity.angle;
-  }
-
-  void removeRendererFor(String id) {
-    var component = entityMap.remove(id);
-    component?.removeFromParent();
-  }
-
-  void updateToGameState(GameState state) {
-    setState(() {
-      var unseenIds = Set.from(entityMap.keys);
-      for (var entity in state.entities) {
-        var renderer = entityMap[entity.id];
-        if (renderer == null) {
-          createRendererFor(entity);
-        } else {
-          updateRenderer(entity, renderer);
-        }
-        unseenIds.remove(entity.id);
-      }
-      for (var id in unseenIds) {
-        removeRendererFor(id);
-      }
-    });
-  }
-
-  @override
-  void initState() {
-    // FIXME: Get gameSize from server.
-    var gameSize = Vector2(1000, 1000);
-    renderer = ShimmerRenderer(actions: widget.actions, gameSize: gameSize);
-    super.initState();
-  }
-
-  @override
-  widgets.Widget build(widgets.BuildContext context) {
-    return GameWidget(game: renderer);
+  void updateFromServer(ServerUpdate update) {
+    world.applySnapshot(update.worldSnapshot);
+    // re-apply the uncommitted inputs
+    // project forward as needed.
+    // do we allow inputs on top of projections?
   }
 }
 
-class ShimmerMain extends widgets.StatefulWidget {
-  const ShimmerMain({widgets.Key? key}) : super(key: key);
+class GameController extends widgets.StatefulWidget {
+  const GameController({widgets.Key? key}) : super(key: key);
 
   @override
-  widgets.State<ShimmerMain> createState() => _ShimmerMainState();
+  widgets.State<GameController> createState() => _GameControllerState();
 }
 
-// Main class of the game.  Starts the network connection, keeps hold of the
-// local client state and the renderer and keeps them in sync.
-class _ShimmerMainState extends widgets.State<ShimmerMain>
-    with widgets.SingleTickerProviderStateMixin<ShimmerMain>
-    implements PlayerActions {
+class _GameControllerState extends widgets.State<GameController> {
+  ClientState? _clientState;
   late ServerConnection _connection;
-  late ClientGameModel gameModel = ClientGameModel();
-  String? playerEntityId;
-  final widgets.GlobalKey<_RenderTreeState> _renderTreeKey =
-      widgets.GlobalKey();
-  late Ticker _idleTicker;
 
-  @override
-  void initState() {
-    _idleTicker = createTicker((elapsed) {
-      _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
-    })
-      ..start();
-    _connection = ServerConnection(Uri.parse('http://localhost:3000'));
-    _connection.onUpdateFromServer((update) {
-      gameModel.processUpdateFromServer(update);
-    });
-    _connection.onSetPlayerEntityId((playerEntityId) {
+  void _connectToServer() {
+    var url = 'http://localhost:3000';
+    // var url = "http://shimmer-c3juc.ondigitalocean.app:3000/";
+    _connection = ServerConnection(Uri.parse(url));
+    _connection.onJoinGame((joinResponse) {
       setState(() {
-        this.playerEntityId = playerEntityId;
+        var world = World.empty();
+        final clientState = ClientState(
+          world: world,
+          match: world.getEntity(joinResponse.matchId),
+          hero: world.getEntity(joinResponse.heroId),
+          player: world.getEntity(joinResponse.playerId),
+        );
+        // TODO: Client can't write to the world. Need to send an action to the
+        // server.
+        // clientState.player.setComponent(ViewportComponent(
+        //   position: clientState.hero.getComponent<PhysicsComponent>().position,
+        //   size: clientState.match.getComponent<MapComponent>().size,
+        // ));
+        _clientState = clientState;
+      });
+      _connection.onServerUpdate((update) {
+        _clientState?.updateFromServer(update);
       });
     });
+  }
+
+  @override
+  void initState() {
     super.initState();
+    _connectToServer();
   }
 
   @override
   void dispose() {
-    _idleTicker.dispose();
     _connection.dispose();
     super.dispose();
   }
 
   @override
-  void movePlayerTo(Vector2 position) {
-    // TODO: Should this clamp to the map size?
-    _connection.socket
-        .emit('move_player_to', {'x': position.x, 'y': position.y});
-  }
-
-  @override
   widgets.Widget build(widgets.BuildContext context) {
-    return RenderTree(
-      key: _renderTreeKey,
-      actions: this,
-      playerEntityId: playerEntityId,
+    if (_clientState == null) {
+      return const widgets.Center(
+        child: widgets.Text('Connecting to server...'),
+      );
+    }
+    return GameView(
+      clientState: _clientState!,
+      onAction: (action) {
+        if (action is MoveHeroAction) {
+          _connection.socket.emit('move_player_to',
+              {'x': action.destination.x, 'y': action.destination.y});
+        }
+      },
     );
   }
 }
 
-class ClientGameModel {
-  GameState _lastStateFromServer = GameState(
-    entities: [],
-    tickNumber: 0,
-    clientTime: DateTime.now(),
-  );
+class GameView extends widgets.StatelessWidget {
+  final ClientState clientState;
+  final widgets.ValueChanged<Action> onAction;
 
-  GameState _lastProjection = GameState(
-    entities: [],
-    tickNumber: 0,
-    clientTime: DateTime.now(),
-  );
+  const GameView({
+    super.key,
+    required this.clientState,
+    required this.onAction,
+  });
 
-  void processUpdateFromServer(NetGameState state) {
-    _lastStateFromServer = GameState.fromNet(state);
-    _lastProjection = _lastStateFromServer;
-    // apply local inputs to projected state?
-  }
-
-  GameState get projectedState {
-    // Figure out how far ahead of lastStateFromServer we are.
-    var deltaFromLastTick =
-        DateTime.now().difference(_lastProjection.clientTime!);
-    // Avoid ticks too small to get lost in integer math.
-    if (deltaFromLastTick.inMilliseconds > 30) {
-      _lastProjection = _lastProjection.playedForward(deltaFromLastTick);
-    }
-    // Apply any local inputs.
-    return _lastProjection;
+  @override
+  widgets.Widget build(widgets.BuildContext context) {
+    return ShimmerRenderer(
+      clientState: clientState,
+    );
   }
 }
+
+// This needs to run physics forward n-ticks when we are behind at least
+// one tick from the server.
+// class ClientGameModel {
+//   GameState _lastStateFromServer = GameState(
+//     entities: [],
+//     tickNumber: 0,
+//     clientTime: DateTime.now(),
+//   );
+
+//   GameState _lastProjection = GameState(
+//     entities: [],
+//     tickNumber: 0,
+//     clientTime: DateTime.now(),
+//   );
+
+//   void processUpdateFromServer(ServerUpdate state) {
+//     _lastStateFromServer = GameState.fromNet(state);
+//     _lastProjection = _lastStateFromServer;
+//     // apply local inputs to projected state?
+//   }
+
+//   // FIXME: This is wrong, it should only project forward whole ticks.
+//   GameState get projectedState {
+//     // Figure out how far ahead of lastStateFromServer we are.
+//     var deltaFromLastTick =
+//         DateTime.now().difference(_lastProjection.clientTime!);
+//     // Avoid ticks too small to get lost in integer math.
+//     if (deltaFromLastTick.inMilliseconds > 30) {
+//       _lastProjection = _lastProjection.playedForward(deltaFromLastTick);
+//     }
+//     // Apply any local inputs.
+//     return _lastProjection;
+//   }
+// }

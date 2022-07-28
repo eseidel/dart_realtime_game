@@ -1,66 +1,39 @@
 import 'geometry.dart';
-import 'game.dart';
+import 'ecs.dart';
 
-class NetEntity {
-  final String id;
-  Vector2 position;
-  Vector2 size;
-  double angle;
-  double speed;
-  Action action;
+import 'package:json_annotation/json_annotation.dart';
 
-  NetEntity({
-    required this.id,
-    required this.position,
-    required this.size,
-    required this.angle,
-    required this.action,
-    required this.speed,
-  });
+part 'network.g.dart';
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'x': position.x,
-        'y': position.y,
-        'width': size.x,
-        'height': size.y,
-        'angle': angle,
-        'action': action.name,
-        'speed': speed,
-      };
+@JsonSerializable()
+class NetJoinResponse {
+  final EntityId matchId;
+  final EntityId playerId;
+  final EntityId heroId;
 
-  NetEntity.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        size = Vector2(json['width'], json['height']),
-        position = Vector2(json['x'], json['y']),
-        angle = json['angle'],
-        speed = json['speed'],
-        action = Action.values.byName(json['action']);
+  const NetJoinResponse(this.matchId, this.playerId, this.heroId);
+
+  factory NetJoinResponse.fromJson(Map<String, dynamic> json) =>
+      _$NetJoinResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$NetJoinResponseToJson(this);
 }
 
-class NetGameState {
+class ServerUpdate {
   final int tickNumber;
-  final DateTime? clientTime;
-  final List<NetEntity> entities;
+  final Map<String, dynamic> worldSnapshot;
 
-  const NetGameState({
+  const ServerUpdate({
     required this.tickNumber,
-    required this.entities,
-    this.clientTime,
+    required this.worldSnapshot,
   });
 
   Map<String, dynamic> toJson() => {
         'tickNumber': tickNumber,
-        'clientTime': clientTime?.millisecondsSinceEpoch,
-        'entities': entities.map((e) => e.toJson()).toList(),
+        'worldSnapshot': worldSnapshot,
       };
 
-  NetGameState.fromJson(Map<String, dynamic> json)
-      : entities = json['entities']
-            .map<NetEntity>((json) => NetEntity.fromJson(json))
-            .toList(),
-        tickNumber = json['tickNumber'],
-        clientTime = json['clientTime'] != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['clientTime'])
-            : null;
+  ServerUpdate.fromJson(Map<String, dynamic> json)
+      : tickNumber = json['tickNumber'],
+        worldSnapshot = json['worldSnapshot'];
 }
