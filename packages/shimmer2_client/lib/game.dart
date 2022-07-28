@@ -110,6 +110,7 @@ class GameView extends widgets.StatelessWidget {
   @override
   widgets.Widget build(widgets.BuildContext context) {
     return ShimmerRenderer(
+      // FIXME: Never calling onAction.
       clientState: clientState,
     );
   }

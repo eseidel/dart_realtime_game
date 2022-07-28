@@ -30,28 +30,29 @@ class RenderTriangle extends Renderer {
   final Offset offset;
   final double radius;
   final double angle;
+  final Path _path;
+  final Paint _paint;
 
   RenderTriangle({
     required this.offset,
     required this.radius,
     required this.angle,
-  });
+  })  : _path = Path()
+          ..moveTo(0, 0)
+          ..lineTo(radius, 0)
+          ..lineTo(radius / 2, radius)
+          ..close(),
+        _paint = Paint()
+          ..color = const Color.fromARGB(255, 255, 0, 0)
+          ..style = PaintingStyle.fill;
 
+  // The translate and rotation could be done by some parent class?
   @override
   void paint(Canvas canvas, Duration elapsed) {
-    final paint = Paint()
-      ..color = const Color.fromARGB(255, 255, 0, 0)
-      ..style = PaintingStyle.fill;
     canvas.save();
-    canvas.translate(-offset.dx, -offset.dy);
-    canvas.rotate(angle);
     canvas.translate(offset.dx, offset.dy);
-    final path = Path();
-    path.moveTo(0, 0);
-    path.lineTo(radius, 0);
-    path.lineTo(radius / 2, radius);
-    path.close();
-    canvas.drawPath(path, paint);
+    canvas.rotate(angle);
+    canvas.drawPath(_path, _paint); // The only line unique to this class.
     canvas.restore();
   }
 }
@@ -72,10 +73,11 @@ class ShimmerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // FIXME: don't warp the canvas, rather just provide a pannable camera.
     canvas
       ..save()
       ..translate(viewport.position.x, viewport.position.y)
-      ..scale(viewport.size.x / size.width, viewport.size.y / size.height);
+      ..scale(size.width / viewport.size.x, size.height / viewport.size.y);
     paintDebugBackground(canvas, size);
     for (final renderer in renderers) {
       renderer.paint(canvas, Duration.zero);
