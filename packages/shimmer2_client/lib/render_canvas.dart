@@ -45,6 +45,7 @@ class RenderTriangle extends Renderer {
     canvas.save();
     canvas.translate(-offset.dx, -offset.dy);
     canvas.rotate(angle);
+    canvas.translate(offset.dx, offset.dy);
     final path = Path();
     path.moveTo(0, 0);
     path.lineTo(radius, 0);
@@ -61,12 +62,21 @@ class ShimmerPainter extends CustomPainter {
 
   ShimmerPainter(this.viewport, this.renderers);
 
+  void paintDebugBackground(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color.fromARGB(255, 123, 124, 113);
+    var p = viewport.position;
+    var s = viewport.size;
+    var rect = Rect.fromLTWH(p.x, p.y, s.x, s.y);
+    canvas.drawRect(rect, paint);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas
       ..save()
       ..translate(viewport.position.x, viewport.position.y)
       ..scale(viewport.size.x / size.width, viewport.size.y / size.height);
+    paintDebugBackground(canvas, size);
     for (final renderer in renderers) {
       renderer.paint(canvas, Duration.zero);
     }
@@ -75,7 +85,10 @@ class ShimmerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ShimmerPainter oldDelegate) {
-    return renderers != oldDelegate.renderers;
+    return true;
+    // FIXME: shouldRepaint is wrong.
+    // Needs to at least check viewport?
+    // return renderers != oldDelegate.renderers;
   }
 }
 
@@ -106,12 +119,14 @@ class _ShimmerRendererState extends State<ShimmerRenderer>
 
   // Pipeline goes here.
   void prepareFrame(Duration elapsed) {
-    // Run the projection system.
-    // _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
-    // query for entities
-    // construct renderers
-    final dt = updateTimeDelta(elapsed);
-    renderSystem.update(widget.clientState.world, dt);
+    setState(() {
+      // Run the projection system.
+      // _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
+      // query for entities
+      // construct renderers
+      final dt = updateTimeDelta(elapsed);
+      renderSystem.update(widget.clientState.world, dt);
+    });
   }
 
   @override

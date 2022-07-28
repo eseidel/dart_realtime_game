@@ -1,4 +1,3 @@
-import 'geometry.dart';
 import 'ecs.dart';
 
 import 'package:json_annotation/json_annotation.dart';

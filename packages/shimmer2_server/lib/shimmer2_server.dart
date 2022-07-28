@@ -47,6 +47,8 @@ class ShimmerServer {
   }
 
   void disconnectClient(String socketId) {
+    // FIXME: Need a way to reliably clean up all state from clients?
+    // Currently seem to leak at least 2 PhysicsComponents per connection.
     final playerState = activeClients.remove(socketId)!;
     game.world
       ..destroyEntity(playerState.player)

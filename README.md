@@ -2,8 +2,6 @@
  Attempt #2 at playing with full-stack realtime Dart.
 
 # TODO
-* Replace GameState with Entity Component System.
-* Replace Flame with canvas. (Need a way to do tap animation.)
 * Make rendering layer interpolate from GameState.
 * Prediction logic should only predict on server ticks, not interpolate.
 * Remove all uses of DateTime.now().
@@ -11,10 +9,10 @@
 * Only time clientTime can be accessed is through tick callback elapsed.
 
 # MVP
-- Make docker container
-- Push to somewhere.
+- Fix pushed container to work.
 
 # Issues
+- We leak PhysicsComponents on hot-restart.
 - Do server transmissions need to be marked volatile?
 - Make server only do something when clients are connected?
 - VSC doesn't surface analyzer issues in shimmer2_shared code.

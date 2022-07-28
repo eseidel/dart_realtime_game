@@ -7,9 +7,6 @@ typedef EntityId = int;
 enum ExecutionLocation { client, server }
 
 class World {
-  // FIXME: Server and client need to start at different id offsets.
-  // Otherwise when the client makes speculative entities they mihgt collide
-  // with real server entity ids.
   int _nextId = 0;
   static const int speculativeEntityOffset = 6400000;
   Set<Entity> entities = {};
@@ -20,6 +17,9 @@ class World {
   }
 
   int allocateEntityId(ExecutionLocation location) {
+    // Server and client need to start at different id offsets.
+    // Otherwise when the client makes speculative entities they might collide
+    // with real server entity ids.
     final id = _nextId++;
     if (id >= speculativeEntityOffset) {
       throw Exception('Too many entities in the world.');
@@ -40,17 +40,15 @@ class World {
 
   void destroyEntity(Entity entity) {
     entities.remove(entity);
-    for (final entry in components.entries) {
-      entry.value.remove(entity.id);
+    for (final idToComponentMap in components.values) {
+      idToComponentMap.remove(entity.id);
     }
   }
 
   Entity getEntity(EntityId id) => Entity(world: this, id: id);
 
   Iterable<Entity> query<T>() {
-    return (components[T.runtimeType] ?? {})
-        .keys
-        .map((id) => Entity(world: this, id: id));
+    return (components[T] ?? {}).keys.map((id) => Entity(world: this, id: id));
   }
 
   Map<String, dynamic> toJson() {
@@ -109,6 +107,9 @@ class Entity {
   void removeComponent<T extends Component>() {
     world.components[T]?.remove(id);
   }
+
+  @override
+  String toString() => 'Entity($id)';
 
   String toJson() => id.toString();
 }

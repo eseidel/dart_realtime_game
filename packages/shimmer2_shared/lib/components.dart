@@ -87,6 +87,9 @@ class ViewportComponent extends Component {
     required this.size,
   });
 
+  @override
+  String toString() => 'ViewportComponent($position, $size)';
+
   factory ViewportComponent.fromJson(Map<String, dynamic> json) =>
       _$ViewportComponentFromJson(json);
 

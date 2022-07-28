@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:logging/logging.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
+
+final log = Logger('Shimmer2Client');
 
 void debugRegister(io.Socket socket) {
   const List events = [
@@ -21,8 +24,8 @@ void debugRegister(io.Socket socket) {
   ];
   for (var event in events) {
     socket.on(event, (data) {
-      print(event);
-      print(data);
+      log.fine(event);
+      log.fine(data);
     });
   }
 }
@@ -36,13 +39,13 @@ class ServerConnection {
         // for dart:io.
         socket = io.io(uri.toString(),
             io.OptionBuilder().setTransports(['websocket']).build()) {
-    print("connecting to $uri");
+    log.info("connecting to $uri");
     socket.on('connect', (_) {
-      print('connected to $uri');
+      log.info('connected to $uri');
     });
     debugRegister(socket);
     socket.on('disconnect', (_) {
-      print('disconnected from $uri');
+      log.info('disconnected from $uri');
     });
   }
 
