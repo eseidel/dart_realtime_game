@@ -52,7 +52,7 @@ class Game {
   Game({required int ticksPerSecond})
       : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond) {
     match = world.createEntity(ExecutionLocation.server);
-    match.setComponent(MapComponent(size: Vector2(1000, 1000)));
+    match.setComponent(MapComponent(size: Vector2(200, 200)));
   }
 
   Vector2 randomPosition() {

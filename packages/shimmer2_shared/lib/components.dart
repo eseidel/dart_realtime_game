@@ -77,18 +77,23 @@ class DestinationComponent extends Component {
 @JsonSerializable()
 class ViewportComponent extends Component {
   @JsonVector2Position()
-  final Vector2 position;
+  final Vector2 visualCenter;
+  final double visualRadius;
 
-  @JsonVector2Size()
-  final Vector2 size;
+  ViewportComponent({required this.visualCenter, required this.visualRadius});
 
-  ViewportComponent({
-    required this.position,
-    required this.size,
-  });
+  // Rect mapRect(Size canvasSize) {
+  //   final size = canvasSize / zoomLevel;
+  //   return Rect.fromLTWH(
+  //     position.x - size.width / 2,
+  //     position.y - size.height / 2,
+  //     size.width,
+  //     size.height,
+  //   );
+  // }
 
   @override
-  String toString() => 'ViewportComponent($position, $size)';
+  String toString() => 'ViewportComponent($visualCenter, $visualRadius)';
 
   factory ViewportComponent.fromJson(Map<String, dynamic> json) =>
       _$ViewportComponentFromJson(json);

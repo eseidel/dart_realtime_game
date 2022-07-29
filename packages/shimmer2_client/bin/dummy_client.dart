@@ -10,7 +10,7 @@ void main() {
 
   socket.on('connect', (_) {
     int pointIndex = 0;
-    Vector2 size = Vector2(1000, 1000);
+    Vector2 size = Vector2(200, 200);
     var points = [
       Vector2(.5, .25)..multiply(size),
       Vector2(.75, .5)..multiply(size),

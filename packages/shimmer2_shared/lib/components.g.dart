@@ -39,16 +39,15 @@ Map<String, dynamic> _$DestinationComponentToJson(
 
 ViewportComponent _$ViewportComponentFromJson(Map<String, dynamic> json) =>
     ViewportComponent(
-      position: const JsonVector2Position()
-          .fromJson(json['position'] as Map<String, dynamic>),
-      size: const JsonVector2Size()
-          .fromJson(json['size'] as Map<String, dynamic>),
+      visualCenter: const JsonVector2Position()
+          .fromJson(json['visualCenter'] as Map<String, dynamic>),
+      visualRadius: (json['visualRadius'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$ViewportComponentToJson(ViewportComponent instance) =>
     <String, dynamic>{
-      'position': const JsonVector2Position().toJson(instance.position),
-      'size': const JsonVector2Size().toJson(instance.size),
+      'visualCenter': const JsonVector2Position().toJson(instance.visualCenter),
+      'visualRadius': instance.visualRadius,
     };
 
 MapComponent _$MapComponentFromJson(Map<String, dynamic> json) => MapComponent(

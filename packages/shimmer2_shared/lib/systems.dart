@@ -5,7 +5,7 @@ import 'geometry.dart';
 class PhysicsSystem extends System {
   @override
   void update(World world, double dt) {
-    for (final entity in world.query<DestinationComponent>()) {
+    for (final entity in world.query<DestinationComponent>().toList()) {
       final destination = entity.getComponent<DestinationComponent>();
       final physics = entity.getComponent<PhysicsComponent>();
 
@@ -19,6 +19,7 @@ class PhysicsSystem extends System {
           position: physics.position + delta.normalized() * speed,
         ));
       } else {
+        // TODO: Do we want to queue mutations?
         entity.removeComponent<DestinationComponent>();
         entity.setComponent(physics.copyWith(position: destination.location));
       }

@@ -1,9 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/rendering.dart';
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
 
 import 'game.dart';
+import 'dart:math';
 
 class RenderSystem extends System {
   final List<Renderer> renderers = [];
@@ -11,6 +13,11 @@ class RenderSystem extends System {
   @override
   void update(World world, double dt) {
     renderers.clear();
+    for (final entity in world.query<MapComponent>()) {
+      final map = entity.getComponent<MapComponent>();
+      renderers.add(RenderDebugMap(map: map));
+    }
+
     for (final entity in world.query<PhysicsComponent>()) {
       final physics = entity.getComponent<PhysicsComponent>();
       renderers.add(RenderTriangle(
@@ -57,40 +64,18 @@ class RenderTriangle extends Renderer {
   }
 }
 
-class ShimmerPainter extends CustomPainter {
-  final ViewportComponent viewport;
-  final List<Renderer> renderers;
+class RenderDebugMap extends Renderer {
+  final MapComponent map;
 
-  ShimmerPainter(this.viewport, this.renderers);
+  RenderDebugMap({required this.map});
 
-  void paintDebugBackground(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color.fromARGB(255, 123, 124, 113);
-    var p = viewport.position;
-    var s = viewport.size;
-    var rect = Rect.fromLTWH(p.x, p.y, s.x, s.y);
-    canvas.drawRect(rect, paint);
-  }
+  static final _paint = Paint()
+    ..color = const Color.fromARGB(255, 123, 124, 113);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // FIXME: don't warp the canvas, rather just provide a pannable camera.
-    canvas
-      ..save()
-      ..translate(viewport.position.x, viewport.position.y)
-      ..scale(size.width / viewport.size.x, size.height / viewport.size.y);
-    paintDebugBackground(canvas, size);
-    for (final renderer in renderers) {
-      renderer.paint(canvas, Duration.zero);
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant ShimmerPainter oldDelegate) {
-    return true;
-    // FIXME: shouldRepaint is wrong.
-    // Needs to at least check viewport?
-    // return renderers != oldDelegate.renderers;
+  void paint(Canvas canvas, Duration elapsed) {
+    final rect = Rect.fromLTWH(0, 0, map.size.x, map.size.y);
+    canvas.drawRect(rect, _paint);
   }
 }
 
@@ -147,20 +132,151 @@ class _ShimmerRendererState extends State<ShimmerRenderer>
 
   @override
   Widget build(BuildContext context) {
+    var gameSize = Vector2(200, 200);
+    var middle = gameSize / 2;
+    var radius = min(middle.x, middle.y);
     final dummyViewport =
-        ViewportComponent(position: Vector2.zero(), size: Vector2(1000, 1000));
+        ViewportComponent(visualCenter: middle, visualRadius: radius);
     // TODO: Store the viewport somewhere, perhaps the ECS?
     // widget.clientState.player.getComponent<ViewportComponent>(),
-    return GestureDetector(
-      child: CustomPaint(
-        painter: ShimmerPainter(dummyViewport, renderSystem.renderers),
-      ),
-      onTapUp: (TapUpDetails details) {
-        // FIXME: Correct for viewport.
-        var destination =
-            Vector2(details.localPosition.dx, details.localPosition.dy);
-        widget.onAction(MoveHeroAction(destination: destination));
+    return ShimmerViewport(
+        viewport: dummyViewport,
+        child: GestureDetector(
+          onTapUp: (TapUpDetails details) {
+            var destination =
+                Vector2(details.localPosition.dx, details.localPosition.dy);
+            widget.onAction(MoveHeroAction(destination: destination));
+          },
+          child: ShimmerPainter(renderers: renderSystem.renderers),
+        ));
+  }
+}
+
+class ShimmerPainter extends SingleChildRenderObjectWidget {
+  final List<Renderer> renderers;
+
+  const ShimmerPainter({
+    super.key,
+    required this.renderers,
+    super.child,
+  });
+
+  @override
+  RenderShimmerPainter createRenderObject(BuildContext context) {
+    return RenderShimmerPainter(renderers: renderers);
+  }
+
+  @override
+  void updateRenderObject(
+      BuildContext context, RenderShimmerPainter renderObject) {
+    renderObject.renderers = renderers;
+  }
+}
+
+class RenderShimmerPainter extends RenderProxyBox {
+  RenderShimmerPainter({
+    required List<Renderer> renderers,
+    RenderBox? child,
+  })  : _renderers = renderers,
+        super(child);
+
+  List<Renderer> _renderers;
+  List<Renderer> get renderers => _renderers;
+  set renderers(List<Renderer> value) {
+    if (value != _renderers) {
+      _renderers = value;
+      markNeedsPaint();
+    }
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+
+  @override
+  Size computeSizeForNoChild(BoxConstraints constraints) =>
+      constraints.constrain(Size.zero);
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final canvas = context.canvas;
+    for (final renderer in _renderers) {
+      renderer.paint(canvas, Duration.zero);
+    }
+  }
+}
+
+class ShimmerViewport extends SingleChildRenderObjectWidget {
+  final ViewportComponent viewport;
+
+  const ShimmerViewport({
+    super.key,
+    required this.viewport,
+    super.child,
+  });
+
+  @override
+  RenderShimmerViewport createRenderObject(BuildContext context) {
+    return RenderShimmerViewport(viewport: viewport);
+  }
+
+  @override
+  void updateRenderObject(
+      BuildContext context, RenderShimmerViewport renderObject) {
+    renderObject.viewport = viewport;
+  }
+}
+
+class RenderShimmerViewport extends RenderProxyBox {
+  RenderShimmerViewport({
+    required ViewportComponent viewport,
+    RenderBox? child,
+  })  : _viewport = viewport,
+        super(child);
+
+  ViewportComponent _viewport;
+  ViewportComponent get viewport => _viewport;
+  set viewport(ViewportComponent value) {
+    if (value != _viewport) {
+      _viewport = value;
+      markNeedsPaint();
+    }
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    return result.addWithPaintTransform(
+      transform: _paintTranform,
+      position: position,
+      hitTest: (BoxHitTestResult result, Offset position) {
+        return super.hitTestChildren(result, position: position);
       },
     );
+  }
+
+  @override
+  Size computeSizeForNoChild(BoxConstraints constraints) =>
+      constraints.constrain(Size.zero);
+
+  Matrix4 _paintTranform = Matrix4.identity();
+
+  void _updatePaintTransform() {
+    final canvasRadius = size.shortestSide / 2;
+    final scale = canvasRadius / _viewport.visualRadius;
+    _paintTranform = Matrix4.identity()
+      ..translate(size.width / 2, size.height / 2)
+      ..scale(scale, scale)
+      ..translate(-_viewport.visualCenter.x, -_viewport.visualCenter.y);
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    _updatePaintTransform();
+    final canvas = context.canvas;
+    canvas
+      ..save()
+      ..translate(offset.dx, offset.dy)
+      ..transform(_paintTranform.storage);
+    child?.paint(context, Offset.zero);
+    canvas.restore();
   }
 }

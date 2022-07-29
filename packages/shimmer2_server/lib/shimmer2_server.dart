@@ -18,7 +18,7 @@ class ShimmerServer {
   final Map<String, PlayerState> activeClients = {};
   final Game game;
 
-  ShimmerServer({this.port = 3000, int ticksPerSecond = 1})
+  ShimmerServer({this.port = 3000, int ticksPerSecond = 10})
       : game = Game(ticksPerSecond: ticksPerSecond);
 
   // Used to tell the client which entity is them so they can follow it with camera.
