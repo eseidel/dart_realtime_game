@@ -99,7 +99,7 @@ class _GameControllerState extends widgets.State<GameController> {
 
 class GameView extends widgets.StatelessWidget {
   final ClientState clientState;
-  final widgets.ValueChanged<Action> onAction;
+  final widgets.ValueChanged<ClientAction> onAction;
 
   const GameView({
     super.key,
@@ -110,7 +110,7 @@ class GameView extends widgets.StatelessWidget {
   @override
   widgets.Widget build(widgets.BuildContext context) {
     return ShimmerRenderer(
-      // FIXME: Never calling onAction.
+      onAction: onAction,
       clientState: clientState,
     );
   }

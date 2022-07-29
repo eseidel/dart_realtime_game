@@ -11,9 +11,21 @@ class World {
   static const int speculativeEntityOffset = 6400000;
   Set<Entity> entities = {};
   Map<Type, Map<EntityId, Component>> components = {};
+  // How many types of systems are there?  Should this be a map?
+  List<System> perTickSystems;
+  List<System> perFrameSystems;
 
-  World.empty() {
-    _nextId = 0;
+  World.empty({List<System>? perTickSystems, List<System>? perFrameSystems})
+      : _nextId = 0,
+        perTickSystems = perTickSystems ?? [],
+        perFrameSystems = perFrameSystems ?? [];
+
+  // Do different systems take different update args?
+  void runSystems(List<System> systems, Duration delta) {
+    for (final system in systems) {
+      system.update(this, delta.inMilliseconds / 1000);
+    }
+    // Run clean-up systems.
   }
 
   int allocateEntityId(ExecutionLocation location) {

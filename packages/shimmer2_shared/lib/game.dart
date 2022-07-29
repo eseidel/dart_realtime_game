@@ -45,8 +45,7 @@ import 'systems.dart';
 class Game {
   int tickNumber = 0;
   Duration tickDuration;
-  final World world = World.empty();
-  final List<System> tickSystems = [PhysicsSystem()];
+  final World world = World.empty(perTickSystems: [PhysicsSystem()]);
   late final Entity match;
   final random = Random();
 
@@ -71,8 +70,6 @@ class Game {
 
   void tick() {
     tickNumber++;
-    for (final system in tickSystems) {
-      system.update(world, secondsPerTick());
-    }
+    world.runSystems(world.perTickSystems, tickDuration);
   }
 }

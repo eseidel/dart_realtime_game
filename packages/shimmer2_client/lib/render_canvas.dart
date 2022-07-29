@@ -96,7 +96,9 @@ class ShimmerPainter extends CustomPainter {
 
 class ShimmerRenderer extends StatefulWidget {
   final ClientState clientState;
-  const ShimmerRenderer({super.key, required this.clientState});
+  final ValueChanged<ClientAction> onAction;
+  const ShimmerRenderer(
+      {super.key, required this.clientState, required this.onAction});
 
   @override
   State<ShimmerRenderer> createState() => _ShimmerRendererState();
@@ -149,8 +151,16 @@ class _ShimmerRendererState extends State<ShimmerRenderer>
         ViewportComponent(position: Vector2.zero(), size: Vector2(1000, 1000));
     // TODO: Store the viewport somewhere, perhaps the ECS?
     // widget.clientState.player.getComponent<ViewportComponent>(),
-    return CustomPaint(
-      painter: ShimmerPainter(dummyViewport, renderSystem.renderers),
+    return GestureDetector(
+      child: CustomPaint(
+        painter: ShimmerPainter(dummyViewport, renderSystem.renderers),
+      ),
+      onTapUp: (TapUpDetails details) {
+        // FIXME: Correct for viewport.
+        var destination =
+            Vector2(details.localPosition.dx, details.localPosition.dy);
+        widget.onAction(MoveHeroAction(destination: destination));
+      },
     );
   }
 }

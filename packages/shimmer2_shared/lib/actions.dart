@@ -1,8 +1,8 @@
 import 'geometry.dart';
 
-class Action {}
+class ClientAction {}
 
-class MoveHeroAction extends Action {
+class MoveHeroAction extends ClientAction {
   final Vector2 destination;
 
   MoveHeroAction({required this.destination});
