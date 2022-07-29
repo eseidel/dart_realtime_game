@@ -21,7 +21,7 @@ void main() {
     var timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       pointIndex = (pointIndex + 1) % points.length;
       var point = points[pointIndex];
-      socket.emit('move_player_to', jsonEncode(point));
+      socket.emit('move_player_to', {'x': point.x, 'y': point.y});
     });
 
     socket.on('disconnect', (_) {

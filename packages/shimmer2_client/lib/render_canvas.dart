@@ -143,8 +143,8 @@ class _ShimmerRendererState extends State<ShimmerRenderer>
         viewport: dummyViewport,
         child: GestureDetector(
           onTapUp: (TapUpDetails details) {
-            var destination =
-                Vector2(details.localPosition.dx, details.localPosition.dy);
+            var local = details.localPosition;
+            var destination = Vector2(local.dx, local.dy);
             widget.onAction(MoveHeroAction(destination: destination));
           },
           child: ShimmerPainter(renderers: renderSystem.renderers),
