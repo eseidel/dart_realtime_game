@@ -50,9 +50,10 @@ class _GameControllerState extends widgets.State<GameController> {
     var url = 'ws://localhost:3000';
     if (isProduction()) {
       print("production");
-      url = 'wss://${Uri.base.host}:3000/api';
+      // Production uses a route proxy instead of a custom port.
+      url = 'wss://${Uri.base.host}/api';
+      // e.g. 'wss://shimmer-c3juc.ondigitalocean.app/api'
     }
-    // var url = 'wss://shimmer-c3juc.ondigitalocean.app:3000/api';
     var uri = Uri.parse(url);
     print(uri);
     _connection = WebSocketChannel.connect(uri);
