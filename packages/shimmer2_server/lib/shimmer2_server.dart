@@ -35,9 +35,14 @@ class Connection {
   }
 
   void _dispatchMessage(Message message) {
-    handlers[message.type]?.forEach((callback) {
+    var callbacks = handlers[message.type];
+    if (callbacks == null || callbacks.isEmpty) {
+      print("No handler for ${message.type}");
+      return;
+    }
+    for (var callback in callbacks) {
       callback(message.data);
-    });
+    }
   }
 
   void send(String type, Map<String, dynamic> data) {
@@ -60,7 +65,7 @@ class ConnectionHandler {
       onConnection?.call(connection);
       webSocket.sink.done.then((_) {
         print("WebSocket connection closed");
-        connection._dispatchMessage(Message("disconnected", {}));
+        connection._dispatchMessage(Message("disconnect", {}));
         connections.remove(connection);
       });
     });

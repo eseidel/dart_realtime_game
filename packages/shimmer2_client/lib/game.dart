@@ -49,16 +49,14 @@ class _GameControllerState extends widgets.State<GameController> {
     // FIXME: This is a hack, should come from an environment variable?
     var url = 'ws://localhost:3000';
     if (isProduction()) {
-      print("production");
       // Production uses a route proxy instead of a custom port.
       url = 'wss://${Uri.base.host}/api';
       // e.g. 'wss://shimmer-c3juc.ondigitalocean.app/api'
     }
     var uri = Uri.parse(url);
-    print(uri);
+    print("Connecting to $uri");
     _connection = WebSocketChannel.connect(uri);
     _connection.stream.listen((encodedMessage) {
-      print(encodedMessage);
       var message = Message.fromJson(json.decode(encodedMessage));
       if (message.type == "connected") {
         var joinResponse = NetJoinResponse.fromJson(message.data);
@@ -80,6 +78,8 @@ class _GameControllerState extends widgets.State<GameController> {
         });
       } else if (message.type == "tick") {
         _clientState!.updateFromServer(ServerUpdate.fromJson(message.data));
+      } else {
+        print("Unhandled message type: ${message.type}");
       }
     });
   }

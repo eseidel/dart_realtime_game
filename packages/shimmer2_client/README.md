@@ -2,14 +2,6 @@
 
 Client side of shimmer example.
 
-## MVP Goal
-* Multiple players connected
-* Auto-attacks
-* Triggered Abitilies
-* Pickups/buffs
-
-
-
 - Server runs simulation
 - Clients send input to server
 - Clients run local speculative simulation.
@@ -43,6 +35,8 @@ Productes render objects from GameState.
 
 # Questions
 - How do we relate client and server time?
+Every time a GameState is presented, we have a chance to associate server tick
+with client presentation time.
 - Does tick rate need to be variable?  Yes server config.
 - Do we just open a new "transaction" after every server update?
 

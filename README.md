@@ -7,27 +7,24 @@
 * Remove all uses of DateTime.now().
 * Move clientTime to Duration.
 * Only time clientTime can be accessed is through tick callback elapsed.
+* Make WebSockets reconnect automatically.
+* Draw animation on mouse click.
+* Add ability to damage.
+* Fix rendering to draw centered around position.
+* Ability to set a color and name.
+* Attacks/missiles.
+* Attakcing automatically on proximity.
+* Abitilies triggered by keys/buttons.
+* Pickups/buffs which change something.
+* Add database to hold server state.
+* Make rendering fancier (e.g. walk cycle)
+* Add background tiles (like forest)
 
-# MVP
-- Fix pushed container to work.
 
 # Issues
 - We leak PhysicsComponents on hot-restart.
-- Do server transmissions need to be marked volatile?
 - Make server only do something when clients are connected?
 - VSC doesn't surface analyzer issues in shimmer2_shared code.
-
-# Next
-- Make it possible to set a color from the client.
-- Make it possible to set a name from the client.
-
-# Arch
-- Server ticks at a fixed rate
-- Client runs a copy of the server (predicter) tick.
-- Client actions polled at a fixed rate and sent to both server and predicter.
-- Client renders from predicter at current time.
-- Packets from server update predicters previous times.
-- Client uses further interpoloation between states to smooth animations?
 
 # References
 https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
@@ -35,11 +32,21 @@ https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.htm
 
 # Usage
 
+# Running locally
+```
+melos bootstrap # runs pub get for all packages
+
+cd packages/shimmer2_server
+dart run bin/serve.dart
+
+
+cd packages/shimmer2_client
+flutter run
+```
+
 # Building docker files
 
-
 Building locally:
-
 ```
 docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
 docker build -f .\dockerfiles\backend.Dockerfile -t backend .
