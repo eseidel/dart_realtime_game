@@ -6,3 +6,8 @@ build/
 .github/
 .gitignore
 .packages
+macos
+linux
+windows
+android
+ios

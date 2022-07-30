@@ -31,3 +31,16 @@
 
 # References
 https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
+
+
+# Usage
+
+# Building docker files
+
+
+Building locally:
+
+```
+docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
+docker build -f .\dockerfiles\backend.Dockerfile -t backend .
+```

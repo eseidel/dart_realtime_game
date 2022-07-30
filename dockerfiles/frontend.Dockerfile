@@ -1,3 +1,4 @@
+# I'm not aware of an official flutter build image, so building our own.
 FROM ubuntu:20.04 as build
 # Make apt-get not prompt for "geographic area"
 ARG DEBIAN_FRONTEND=noninteractive
@@ -15,6 +16,7 @@ ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PAT
 
 # Setup Flutter
 RUN flutter channel stable
+# config --enable-web may not be needed anymore?
 RUN flutter config --enable-web
 RUN flutter doctor
 
@@ -24,27 +26,11 @@ COPY . .
 
 # Build the client
 WORKDIR /app/packages/shimmer2_client
+# pubspec.lock should ensure get pulls the same as locally.
 RUN flutter pub get
 RUN flutter build web
 
-# Compile websocket server.
-WORKDIR /app/packages/shimmer2_server
-RUN dart pub get
-RUN dart compile exe bin/serve.dart -o /app/backend
-
-# Build minimal serving image from AOT-compiled `/server`
-# and the pre-built AOT-runtime in the `/runtime/` directory of the base image.
-
 FROM nginx:1.21.1-alpine
 COPY --from=build /app/packages/shimmer2_client/build /usr/share/nginx/html
-COPY --from=build /app/docker_serve.sh /app/docker_serve.sh
-COPY --from=build /app/backend /app/
 
-# COPY --from=build /runtime/ /
-# COPY --from=build /app/packages/shimmer2_client/build /app/frontend
-
-# Start server.
-EXPOSE 3000
 EXPOSE 80
-
-CMD ["/app/docker_serve.sh"]
