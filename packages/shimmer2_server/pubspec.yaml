@@ -11,12 +11,8 @@ dependencies:
   shelf_web_socket: ^1.0.2
   shimmer2_shared:
     path: ../shimmer2_shared
-  socket_io: ^1.0.1
   web_socket_channel: ^2.2.0
 
 dev_dependencies:
   lints: ^2.0.0
   test: ^1.16.0
-  # Version 2.0.0 moved to protocol 3.x which is incompatable with socket_io
-  # which is still on protocol 2.x.  Only used for test scripts.
-  socket_io_client: <2.0.0

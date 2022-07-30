@@ -1,8 +1,23 @@
-import 'ecs.dart';
+import 'dart:convert';
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'ecs.dart';
+
 part 'network.g.dart';
+
+class Message {
+  Message(this.type, this.data);
+
+  final String type;
+  final Map<String, dynamic> data;
+
+  Message.fromJson(Map<String, dynamic> json)
+      : type = json['type'],
+        data = json['data'];
+
+  String toJson() => json.encode({'type': type, 'data': data});
+}
 
 @JsonSerializable()
 class NetJoinResponse {

@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:convert';
-import 'package:socket_io/socket_io.dart';
 
+import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shimmer2_shared/shimmer2_shared.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class PlayerState {
   Entity hero;
@@ -11,20 +14,78 @@ class PlayerState {
   PlayerState(this.hero, this.player);
 }
 
+typedef SocketId = int;
+
+typedef ConnectionCallback = void Function(Map<String, dynamic> data);
+
+class Connection {
+  final SocketId id;
+  final WebSocketChannel channel;
+  Map<String, List<ConnectionCallback>> handlers = {};
+
+  Connection({required this.id, required this.channel}) {
+    channel.stream.listen((message) {
+      _dispatchMessage(Message.fromJson(json.decode(message)));
+    });
+  }
+
+  void on(String type, ConnectionCallback callback) {
+    handlers[type] ??= [];
+    handlers[type]!.add(callback);
+  }
+
+  void _dispatchMessage(Message message) {
+    handlers[message.type]?.forEach((callback) {
+      callback(message.data);
+    });
+  }
+
+  void send(String type, Map<String, dynamic> data) {
+    channel.sink.add(Message(type, data).toJson());
+  }
+}
+
+typedef OnConnection = void Function(Connection connection);
+
+class ConnectionHandler {
+  List<Connection> connections = [];
+  int nextSocketId = 0;
+  OnConnection? onConnection;
+
+  void listen(int port) {
+    var handler = webSocketHandler((WebSocketChannel webSocket) {
+      print("WebSocket connection opened");
+      var connection = Connection(id: nextSocketId++, channel: webSocket);
+      connections.add(connection);
+      onConnection?.call(connection);
+      webSocket.sink.done.then((_) {
+        print("WebSocket connection closed");
+        connection._dispatchMessage(Message("disconnected", {}));
+        connections.remove(connection);
+      });
+    });
+
+    shelf_io.serve(handler, InternetAddress.anyIPv4, 3000).then((server) {
+      print('Serving ipv4 at ws://${server.address.host}:${server.port}');
+    });
+  }
+}
+
 class ShimmerServer {
   final int port;
   // FIXME: Not sure this map is needed, could just store the extra data
   // on the ServerEntities?
-  final Map<String, PlayerState> activeClients = {};
+  final Map<SocketId, PlayerState> activeClients = {};
   final Game game;
 
   ShimmerServer({this.port = 3000, int ticksPerSecond = 10})
       : game = Game(ticksPerSecond: ticksPerSecond);
 
   // Used to tell the client which entity is them so they can follow it with camera.
-  PlayerState? playerStateForClient(String socketId) => activeClients[socketId];
+  PlayerState? playerStateForClient(SocketId socketId) =>
+      activeClients[socketId];
 
-  PlayerState createPlayer(String socketId) {
+  PlayerState createPlayer(SocketId socketId) {
     var hero = game.world.createEntity(ExecutionLocation.server);
     hero.setComponent(
       PhysicsComponent(
@@ -41,12 +102,12 @@ class ShimmerServer {
     return playerState;
   }
 
-  PlayerState connectClient(String socketId) {
+  PlayerState connectClient(SocketId socketId) {
     assert(playerStateForClient(socketId) == null);
     return createPlayer(socketId);
   }
 
-  void disconnectClient(String socketId) {
+  void disconnectClient(SocketId socketId) {
     // FIXME: Need a way to reliably clean up all state from clients?
     // Currently seem to leak at least 2 PhysicsComponents per connection.
     final playerState = activeClients.remove(socketId)!;
@@ -55,47 +116,22 @@ class ShimmerServer {
       ..destroyEntity(playerState.hero);
   }
 
-  void debugRegister(Socket socket) {
-    const List events = [
-      'connect',
-      'connect_error',
-      'connect_timeout',
-      'connecting',
-      'disconnect',
-      'error',
-      'reconnect',
-      'reconnect_attempt',
-      'reconnect_failed',
-      'reconnect_error',
-      'reconnecting',
-      'ping',
-      'pong'
-    ];
-    for (var event in events) {
-      socket.on(event, (data) {
-        print(event);
-        print(data);
-      });
-    }
-  }
-
   void start() {
-    var io = Server();
-    io.on('connection', (client) {
-      debugRegister(client);
+    var handler = ConnectionHandler();
+    handler.onConnection = (Connection client) {
       // FIXME: Use some an explicit connect/login message instead.
       var playerState = connectClient(client.id);
-      client.emit(
+      client.send(
         'connected',
         NetJoinResponse(
           game.match.id,
           playerState.player.id,
           playerState.hero.id,
-        ),
+        ).toJson(),
       );
 
       // FIXME: Generalize to an action queue.
-      client.on('move_player_to', (data) {
+      client.on('move_player_to', (Map<String, dynamic> data) {
         var position = Vector2(data['x'], data['y']);
         playerStateForClient(client.id)
             ?.hero
@@ -105,13 +141,13 @@ class ShimmerServer {
       client.on('disconnect', (_) {
         disconnectClient(client.id);
       });
-    });
-    io.listen(port);
+    };
+    handler.listen(port);
 
     Timer.periodic(game.tickDuration, (timer) {
       game.tick();
-      for (var client in io.sockets.sockets) {
-        client.emit("tick", jsonEncode(game.toNet().toJson()));
+      for (var client in handler.connections) {
+        client.send("tick", game.toNet().toJson());
       }
     });
   }

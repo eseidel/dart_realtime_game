@@ -1,9 +1,11 @@
 import 'package:flutter/widgets.dart' as widgets;
 
 import 'package:shimmer2_shared/shimmer2_shared.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
-import 'network.dart';
 import 'render_canvas.dart';
+
+import 'dart:convert';
 
 class ClientState {
   final World world;
@@ -37,35 +39,47 @@ class GameController extends widgets.StatefulWidget {
 
 class _GameControllerState extends widgets.State<GameController> {
   ClientState? _clientState;
-  late ServerConnection _connection;
+  late WebSocketChannel _connection;
+
+  bool isProduction() {
+    return const bool.fromEnvironment('dart.vm.product');
+  }
 
   void _connectToServer() {
+    // FIXME: This is a hack, should come from an environment variable?
     var url = 'ws://localhost:3000';
-    if (Uri.base.host != 'localhost') {
+    if (isProduction()) {
+      print("production");
       url = 'wss://${Uri.base.host}:3000/api';
     }
     // var url = 'wss://shimmer-c3juc.ondigitalocean.app:3000/api';
-    _connection = ServerConnection(Uri.parse(url));
-    _connection.onJoinGame((joinResponse) {
-      setState(() {
-        var world = World.empty();
-        final clientState = ClientState(
-          world: world,
-          match: world.getEntity(joinResponse.matchId),
-          hero: world.getEntity(joinResponse.heroId),
-          player: world.getEntity(joinResponse.playerId),
-        );
-        // TODO: Client can't write to the world. Need to send an action to the
-        // server.
-        // clientState.player.setComponent(ViewportComponent(
-        //   position: clientState.hero.getComponent<PhysicsComponent>().position,
-        //   size: clientState.match.getComponent<MapComponent>().size,
-        // ));
-        _clientState = clientState;
-      });
-      _connection.onServerUpdate((update) {
-        _clientState?.updateFromServer(update);
-      });
+    var uri = Uri.parse(url);
+    print(uri);
+    _connection = WebSocketChannel.connect(uri);
+    _connection.stream.listen((encodedMessage) {
+      print(encodedMessage);
+      var message = Message.fromJson(json.decode(encodedMessage));
+      if (message.type == "connected") {
+        var joinResponse = NetJoinResponse.fromJson(message.data);
+        setState(() {
+          var world = World.empty();
+          final clientState = ClientState(
+            world: world,
+            match: world.getEntity(joinResponse.matchId),
+            hero: world.getEntity(joinResponse.heroId),
+            player: world.getEntity(joinResponse.playerId),
+          );
+          // TODO: Client can't write to the world. Need to send an action to the
+          // server.
+          // clientState.player.setComponent(ViewportComponent(
+          //   position: clientState.hero.getComponent<PhysicsComponent>().position,
+          //   size: clientState.match.getComponent<MapComponent>().size,
+          // ));
+          _clientState = clientState;
+        });
+      } else if (message.type == "tick") {
+        _clientState!.updateFromServer(ServerUpdate.fromJson(message.data));
+      }
     });
   }
 
@@ -77,7 +91,7 @@ class _GameControllerState extends widgets.State<GameController> {
 
   @override
   void dispose() {
-    _connection.dispose();
+    _connection.sink.close();
     super.dispose();
   }
 
@@ -92,8 +106,8 @@ class _GameControllerState extends widgets.State<GameController> {
       clientState: _clientState!,
       onAction: (action) {
         if (action is MoveHeroAction) {
-          _connection.socket.emit('move_player_to',
-              {'x': action.destination.x, 'y': action.destination.y});
+          _connection.sink.add(Message('move_player_to',
+              {'x': action.destination.x, 'y': action.destination.y}).toJson());
         }
       },
     );
