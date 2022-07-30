@@ -40,8 +40,11 @@ class _GameControllerState extends widgets.State<GameController> {
   late ServerConnection _connection;
 
   void _connectToServer() {
-    var url = 'http://localhost:3000';
-    // var url = "http://shimmer-c3juc.ondigitalocean.app:3000/";
+    var url = 'ws://localhost:3000';
+    if (Uri.base.host != 'localhost') {
+      url = 'wss://${Uri.base.host}:3000/api';
+    }
+    // var url = 'wss://shimmer-c3juc.ondigitalocean.app:3000/api';
     _connection = ServerConnection(Uri.parse(url));
     _connection.onJoinGame((joinResponse) {
       setState(() {
