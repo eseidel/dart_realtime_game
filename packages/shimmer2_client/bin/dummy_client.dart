@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:async';
 // ignore: depend_on_referenced_packages
 import 'package:socket_io_client/socket_io_client.dart' as io;
