@@ -55,9 +55,34 @@ class ShimmerServer {
       ..destroyEntity(playerState.hero);
   }
 
+  void debugRegister(Socket socket) {
+    const List events = [
+      'connect',
+      'connect_error',
+      'connect_timeout',
+      'connecting',
+      'disconnect',
+      'error',
+      'reconnect',
+      'reconnect_attempt',
+      'reconnect_failed',
+      'reconnect_error',
+      'reconnecting',
+      'ping',
+      'pong'
+    ];
+    for (var event in events) {
+      socket.on(event, (data) {
+        print(event);
+        print(data);
+      });
+    }
+  }
+
   void start() {
     var io = Server();
     io.on('connection', (client) {
+      debugRegister(client);
       // FIXME: Use some an explicit connect/login message instead.
       var playerState = connectClient(client.id);
       client.emit(
