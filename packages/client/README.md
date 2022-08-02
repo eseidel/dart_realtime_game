@@ -2,6 +2,9 @@
 
 Client side of game example.
 
+# Usage
+See the root level README.md.  In short `flutter run` runs the client.
+
 
 # Incomplete notes from development
 
@@ -34,9 +37,7 @@ Productes render objects from GameState.
 - Client asks each entity to speculate to the closes ms?
 - Render pipeline draws from speculated entity state?
 
-
-
-# Questions
+## Questions
 - How do we relate client and server time?
 Every time a GameState is presented, we have a chance to associate server tick
 with client presentation time.
