@@ -42,7 +42,7 @@ docker build -f .\dockerfiles\backend.Dockerfile -t backend .
 - Server leaks player connections when players drop (leaving zombies).
 - Server spins even when no players are connected.
 
-# Things left on my TODO (no further development currently planned)
+## Things left on my TODO (no further development currently planned)
 * Make rendering layer interpolate from GameState.
 * Remove all uses of DateTime.now() and move clientTime to Duration.
 * Only time clientTime can be accessed is through tick callback elapsed.
@@ -58,5 +58,7 @@ docker build -f .\dockerfiles\backend.Dockerfile -t backend .
 * Add background tiles (like forest)
 * Switch to 3d frontend.
 
-# References
-https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
+# Inspirations
+* https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
+* https://docs.unity3d.com/Packages/com.unity.entities@0.51/manual/index.html
+* https://github.com/flame-engine/oxygen
