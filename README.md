@@ -16,7 +16,7 @@ so I chose to write my own (very simple) rendering layer.
 
 # Usage
 
-# Developing locally
+## Developing locally
 ```
 melos bootstrap # runs pub get for all packages
 
@@ -30,7 +30,7 @@ flutter run
 
 I typically run the server from the terminal and the client from VS Code.
 
-# Building docker files locally
+## Building docker files locally
 
 ```
 docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
