@@ -1,4 +1,4 @@
-name: shimmer2
+name: dart_realtime_game
 
 packages:
   - packages/**

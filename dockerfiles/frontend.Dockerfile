@@ -25,12 +25,12 @@ WORKDIR /app
 COPY . .
 
 # Build the client
-WORKDIR /app/packages/shimmer2_client
+WORKDIR /app/packages/client
 # pubspec.lock should ensure get pulls the same as locally.
 RUN flutter pub get
 RUN flutter build web
 
 FROM nginx:1.21.1-alpine
-COPY --from=build /app/packages/shimmer2_client/build/web /usr/share/nginx/html
+COPY --from=build /app/packages/client/build/web /usr/share/nginx/html
 
 EXPOSE 80

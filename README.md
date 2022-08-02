@@ -1,34 +1,18 @@
-# shimmer2
- Attempt #2 at playing with full-stack realtime Dart.
+# dart_realtime_game
 
-# TODO
-* Make rendering layer interpolate from GameState.
-* Prediction logic should only predict on server ticks, not interpolate.
-* Remove all uses of DateTime.now().
-* Move clientTime to Duration.
-* Only time clientTime can be accessed is through tick callback elapsed.
-* Make WebSockets reconnect automatically.
-* Draw animation on mouse click.
-* Add ability to damage.
-* Fix rendering to draw centered around position.
-* Ability to set a color and name.
-* Attacks/missiles.
-* Attakcing automatically on proximity.
-* Abitilies triggered by keys/buttons.
-* Pickups/buffs which change something.
-* Add database to hold server state.
-* Make rendering fancier (e.g. walk cycle)
-* Add background tiles (like forest)
-* Switch to 3d frontend.
+An example of using Dart and Flutter to build a realtime game.
 
+Uses Dart for the full stack, shares code between client and server.
 
-# Issues
-- We leak PhysicsComponents on hot-restart.
-- Make server only do something when clients are connected?
+Uses a Entity Component System both for managing the game as well as
+for network transport.
 
-# References
-https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
+I did not (yet) implement client interpolation or speculation, so the
+client only updates on server update pushes (currently 10 times per second).
 
+This does not use any "game" frameworks, just draws directly to canvas.
+Most game frameworks I've found do not separate state from rendering,
+so I chose to write my own (very simple) rendering layer.
 
 # Usage
 
@@ -36,11 +20,11 @@ https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.htm
 ```
 melos bootstrap # runs pub get for all packages
 
-cd packages/shimmer2_server
+cd packages/server
 dart run bin/serve.dart
 
 
-cd packages/shimmer2_client
+cd packages/client
 flutter run
 ```
 
@@ -52,3 +36,27 @@ I typically run the server from the terminal and the client from VS Code.
 docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
 docker build -f .\dockerfiles\backend.Dockerfile -t backend .
 ```
+
+# Known issues
+- Server leaks 2 PhysicsComponents on hot-restart.
+- Server leaks player connections when players drop (leaving zombies).
+- Server spins even when no players are connected.
+
+# Things left on my TODO (no further development currently planned)
+* Make rendering layer interpolate from GameState.
+* Remove all uses of DateTime.now() and move clientTime to Duration.
+* Only time clientTime can be accessed is through tick callback elapsed.
+* Make WebSockets reconnect automatically.
+* Draw animation on mouse click.
+* Add ability to have players damage each other.
+* Fix rendering to draw centered around position.
+* Ability to set a color and name.
+* Abitilies triggered by keys/buttons.
+* Pickups/buffs which change something.
+* Add database to hold server state.
+* Make rendering fancier (e.g. walk cycle)
+* Add background tiles (like forest)
+* Switch to 3d frontend.
+
+# References
+https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html

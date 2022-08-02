@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 
 # Compile websocket server.
-WORKDIR /app/packages/shimmer2_server
+WORKDIR /app/packages/server
 
 # pubspec.lock should ensure this pulls the same as locally.
 # Would be nice to have a mechanism to ensure that with checksums, etc.
