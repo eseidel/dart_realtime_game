@@ -19,12 +19,12 @@
 * Add database to hold server state.
 * Make rendering fancier (e.g. walk cycle)
 * Add background tiles (like forest)
+* Switch to 3d frontend.
 
 
 # Issues
 - We leak PhysicsComponents on hot-restart.
 - Make server only do something when clients are connected?
-- VSC doesn't surface analyzer issues in shimmer2_shared code.
 
 # References
 https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
@@ -32,7 +32,7 @@ https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.htm
 
 # Usage
 
-# Running locally
+# Developing locally
 ```
 melos bootstrap # runs pub get for all packages
 
@@ -44,9 +44,10 @@ cd packages/shimmer2_client
 flutter run
 ```
 
-# Building docker files
+I typically run the server from the terminal and the client from VS Code.
 
-Building locally:
+# Building docker files locally
+
 ```
 docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
 docker build -f .\dockerfiles\backend.Dockerfile -t backend .
