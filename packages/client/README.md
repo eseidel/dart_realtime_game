@@ -3,7 +3,7 @@
 Client side of game example.
 
 # Usage
-See the root level README.md.  In short `flutter run` runs the client.
+See the root level README.md.  In short `webdev serve` runs the client.
 
 
 # Incomplete notes from development

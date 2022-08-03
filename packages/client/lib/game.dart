@@ -1,9 +1,5 @@
-import 'package:flutter/widgets.dart' as widgets;
-
 import 'package:shared/shared.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-import 'render_canvas.dart';
 
 import 'dart:convert';
 
@@ -30,14 +26,7 @@ class ClientState {
   }
 }
 
-class GameController extends widgets.StatefulWidget {
-  const GameController({widgets.Key? key}) : super(key: key);
-
-  @override
-  widgets.State<GameController> createState() => _GameControllerState();
-}
-
-class _GameControllerState extends widgets.State<GameController> {
+class GameController {
   ClientState? _clientState;
   late WebSocketChannel _connection;
 
@@ -45,7 +34,7 @@ class _GameControllerState extends widgets.State<GameController> {
     return const bool.fromEnvironment('dart.vm.product');
   }
 
-  void _connectToServer() {
+  void connectToServer() {
     // FIXME: This is a hack, should come from an environment variable?
     var url = 'ws://localhost:3000';
     if (isProduction()) {
@@ -60,22 +49,20 @@ class _GameControllerState extends widgets.State<GameController> {
       var message = Message.fromJson(json.decode(encodedMessage));
       if (message.type == "connected") {
         var joinResponse = NetJoinResponse.fromJson(message.data);
-        setState(() {
-          var world = World.empty();
-          final clientState = ClientState(
-            world: world,
-            match: world.getEntity(joinResponse.matchId),
-            hero: world.getEntity(joinResponse.heroId),
-            player: world.getEntity(joinResponse.playerId),
-          );
-          // TODO: Client can't write to the world. Need to send an action to the
-          // server.
-          // clientState.player.setComponent(ViewportComponent(
-          //   position: clientState.hero.getComponent<PhysicsComponent>().position,
-          //   size: clientState.match.getComponent<MapComponent>().size,
-          // ));
-          _clientState = clientState;
-        });
+        var world = World.empty();
+        final clientState = ClientState(
+          world: world,
+          match: world.getEntity(joinResponse.matchId),
+          hero: world.getEntity(joinResponse.heroId),
+          player: world.getEntity(joinResponse.playerId),
+        );
+        // TODO: Client can't write to the world. Need to send an action to the
+        // server.
+        // clientState.player.setComponent(ViewportComponent(
+        //   position: clientState.hero.getComponent<PhysicsComponent>().position,
+        //   size: clientState.match.getComponent<MapComponent>().size,
+        // ));
+        _clientState = clientState;
       } else if (message.type == "tick") {
         _clientState!.updateFromServer(ServerUpdate.fromJson(message.data));
       } else {
@@ -84,53 +71,11 @@ class _GameControllerState extends widgets.State<GameController> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _connectToServer();
-  }
-
-  @override
-  void dispose() {
-    _connection.sink.close();
-    super.dispose();
-  }
-
-  @override
-  widgets.Widget build(widgets.BuildContext context) {
-    if (_clientState == null) {
-      return const widgets.Center(
-        child: widgets.Text('Connecting to server...'),
-      );
+  void onAction(ClientAction action) {
+    if (action is MoveHeroAction) {
+      _connection.sink.add(Message('move_player_to',
+          {'x': action.destination.x, 'y': action.destination.y}).toJson());
     }
-    return GameView(
-      clientState: _clientState!,
-      onAction: (action) {
-        if (action is MoveHeroAction) {
-          _connection.sink.add(Message('move_player_to',
-              {'x': action.destination.x, 'y': action.destination.y}).toJson());
-        }
-      },
-    );
-  }
-}
-
-class GameView extends widgets.StatelessWidget {
-  final ClientState clientState;
-  final widgets.ValueChanged<ClientAction> onAction;
-
-  const GameView({
-    super.key,
-    required this.clientState,
-    required this.onAction,
-  });
-
-  @override
-  widgets.Widget build(widgets.BuildContext context) {
-    return ShimmerRenderer(
-      onAction: onAction,
-      clientState: clientState,
-    );
   }
 }
 
