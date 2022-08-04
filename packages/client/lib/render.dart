@@ -1,33 +1,51 @@
-// import 'package:shared/shared.dart';
+import 'package:shared/shared.dart';
 
-// import 'game.dart';
-// import 'dart:math';
+class Offset {
+  final double x;
+  final double y;
 
-// class RenderSystem extends System {
-//   final List<Renderer> renderers = [];
+  const Offset(this.x, this.y);
+}
 
-//   @override
-//   void update(World world, double dt) {
-//     renderers.clear();
-//     for (final entity in world.query<MapComponent>()) {
-//       final map = entity.getComponent<MapComponent>();
-//       renderers.add(RenderDebugMap(map: map));
-//     }
+// Translates from Components to renders?
+// Which are then later synced with the 3d version?
+class RenderSystem extends System {
+  final List<Renderer> renderers = [];
 
-//     for (final entity in world.query<PhysicsComponent>()) {
-//       final physics = entity.getComponent<PhysicsComponent>();
-//       renderers.add(RenderTriangle(
-//         offset: Offset(physics.position.x, physics.position.y),
-//         radius: physics.size.x / 2,
-//         angle: physics.angle,
-//       ));
-//     }
-//   }
-// }
+  @override
+  void update(World world, double dt) {
+    renderers.clear();
+    // for (final entity in world.query<MapComponent>()) {
+    //   final map = entity.getComponent<MapComponent>();
+    //   renderers.add(RenderDebugMap(map: map));
+    // }
 
-// abstract class Renderer {
-//   void paint(Canvas canvas, Duration elapsed);
-// }
+    for (final entity in world.query<PhysicsComponent>()) {
+      final physics = entity.getComponent<PhysicsComponent>();
+      // Update playcanvas renderers with the latest physics state.
+      renderers.add(Renderer(
+        id: entity.id,
+        position: Offset(physics.position.x, physics.position.y),
+        radius: physics.size.x / 2,
+        angle: physics.angle,
+      ));
+    }
+  }
+}
+
+// Is this just a component?
+class Renderer {
+  final Offset position;
+  final double radius;
+  final double angle;
+  final EntityId id;
+  Renderer({
+    required this.id,
+    required this.position,
+    required this.radius,
+    required this.angle,
+  });
+}
 
 // class RenderTriangle extends Renderer {
 //   final Offset offset;
@@ -75,56 +93,30 @@
 //   }
 // }
 
-// class ShimmerRenderer extends StatefulWidget {
-//   final ClientState clientState;
-//   final ValueChanged<ClientAction> onAction;
-//   const ShimmerRenderer(
-//       {super.key, required this.clientState, required this.onAction});
+class ShimmerRenderRoot {
+  Duration lastFrameTime = Duration.zero;
+  RenderSystem renderSystem = RenderSystem();
 
-//   @override
-//   State<ShimmerRenderer> createState() => _ShimmerRendererState();
-// }
+  double updateTimeDelta(Duration elapsed) {
+    if (lastFrameTime == Duration.zero) {
+      lastFrameTime = elapsed;
+      return 0.0;
+    }
+    double dt = (lastFrameTime - elapsed).inMilliseconds /
+        Duration.millisecondsPerSecond;
+    lastFrameTime = elapsed;
+    return dt;
+  }
 
-// class _ShimmerRendererState extends State<ShimmerRenderer>
-//     with SingleTickerProviderStateMixin<ShimmerRenderer> {
-//   late Ticker _idleTicker;
-//   Duration lastFrameTime = Duration.zero;
-//   RenderSystem renderSystem = RenderSystem();
-
-//   double updateTimeDelta(Duration elapsed) {
-//     if (lastFrameTime == Duration.zero) {
-//       lastFrameTime = elapsed;
-//       return 0.0;
-//     }
-//     double dt = (lastFrameTime - elapsed).inMilliseconds /
-//         Duration.millisecondsPerSecond;
-//     lastFrameTime = elapsed;
-//     return dt;
-//   }
-
-//   // Pipeline goes here.
-//   void prepareFrame(Duration elapsed) {
-//     setState(() {
-//       // Run the projection system.
-//       // _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
-//       // query for entities
-//       // construct renderers
-//       final dt = updateTimeDelta(elapsed);
-//       renderSystem.update(widget.clientState.world, dt);
-//     });
-//   }
-
-//   @override
-//   void initState() {
-//     _idleTicker = createTicker(prepareFrame)..start();
-//     super.initState();
-//   }
-
-//   @override
-//   void dispose() {
-//     _idleTicker.dispose();
-//     super.dispose();
-//   }
+  // Pipeline goes here.
+  void prepareFrame(World world, Duration elapsed) {
+    // Run the projection system.
+    // _renderTreeKey.currentState?.updateToGameState(gameModel.projectedState);
+    // query for entities
+    // construct renderers
+    final dt = updateTimeDelta(elapsed);
+    renderSystem.update(world, dt);
+  }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -146,7 +138,7 @@
 //           child: ShimmerPainter(renderers: renderSystem.renderers),
 //         ));
 //   }
-// }
+}
 
 // class ShimmerPainter extends SingleChildRenderObjectWidget {
 //   final List<Renderer> renderers;

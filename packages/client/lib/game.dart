@@ -34,6 +34,8 @@ class GameController {
     return const bool.fromEnvironment('dart.vm.product');
   }
 
+  World? get world => _clientState?.world;
+
   void connectToServer() {
     // FIXME: This is a hack, should come from an environment variable?
     var url = 'ws://localhost:3000';
