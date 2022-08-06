@@ -120,7 +120,6 @@ class ShimmerRenderRoot {
 
 //   @override
 //   Widget build(BuildContext context) {
-//     var gameSize = Vector2(200, 200);
 //     var middle = gameSize / 2;
 //     var radius = min(middle.x, middle.y);
 //     final dummyViewport =

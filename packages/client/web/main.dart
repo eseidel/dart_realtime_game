@@ -1,8 +1,11 @@
 import 'dart:html' show CanvasElement, document;
 // ignore: library_prefixes
+import 'dart:math' as Math;
+
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 import 'package:playcanvas/playcanvas.dart' as pc;
+import 'package:playcanvas/math.dart' as math;
 import 'package:client/render.dart';
 
 import 'package:client/game.dart';
@@ -36,43 +39,85 @@ void main() {
 class PlayCanvasAdapter {
   final groundHeight = 0.5;
   final Map<EntityId, pc.Entity> _pcEntities = {};
-  pc.Application? _app;
+  late pc.Application app;
 
-  pc.Application get app => _app!;
-  pc.Entity get root => _app!.root;
+  pc.Ray ray = pc.Ray();
+  pc.Vec3 hitPosition = pc.Vec3(0, 0, 0);
+  late pc.Entity cameraEntity;
+  late pc.BoundingBox groundBox;
+
+  pc.Entity get root => app.root;
+
+  void onMouseDown(event) {
+    if (event.button == pc.MOUSEBUTTON_LEFT) {
+      doRayCast(event);
+    }
+  }
+
+  void onTouchStart(event) {
+    if (event.touches.length == 1) {
+      doRayCast(event.touches[0]);
+      event.event.preventDefault();
+    }
+  }
+
+  void doRayCast(screenPosition) {
+    // Initialise the ray and work out the direction of the ray from the a screen position
+
+    cameraEntity.camera.screenToWorld(screenPosition.x, screenPosition.y,
+        cameraEntity.camera.nearClip, ray.origin);
+    cameraEntity.camera.screenToWorld(screenPosition.x, screenPosition.y,
+        cameraEntity.camera.farClip, ray.direction);
+    ray.direction.sub(ray.origin).normalize();
+
+    // Test the ray against the ground
+    var result = groundBox.intersectsRay(ray, hitPosition);
+    if (result) {
+      print("hit: ${hitPosition.x}, ${hitPosition.y}, ${hitPosition.z}");
+    }
+  }
 
   void init(CanvasElement canvas) {
-    _app = pc.Application(
+    app = pc.Application(
         canvas,
         jsify({
           'mouse': pc.Mouse(document.body!),
           'touch': pc.TouchDevice(document.body!),
           'elementInput': pc.ElementInput(canvas),
         }));
+
+    app.mouse.on(pc.EVENT_MOUSEDOWN, pc.singleArgCallback(onMouseDown));
+    app.touch.on(pc.EVENT_TOUCHSTART, pc.singleArgCallback(onTouchStart));
+
     // Create an Entity with a camera component
-    final camera = pc.Entity();
-    camera.addComponent(
+    cameraEntity = pc.Entity();
+    cameraEntity.addComponent(
       "camera",
       pc.CameraOptions(
         clearColor: pc.Color(30 / 255, 30 / 255, 30 / 255),
       ),
     );
 
-    camera.rotateLocal(-30, 0, 0);
-    camera.translateLocal(0, 0, 200);
-    root.addChild(camera);
+    cameraEntity.rotateLocal(-30, 0, 0);
+    cameraEntity.translateLocal(0, 0, gameSize.x);
+    // camera.translateLocal(gameSize.x / 2, 0, 200);
+    root.addChild(cameraEntity);
 
     // Create an Entity for the ground
     final material = pc.StandardMaterial();
     material.diffuse = pc.Color(0.3, 0.5, 0.2);
     material.update();
 
-    final ground = pc.Entity();
+    var ground = pc.Entity();
     ground.addComponent(
         "render", pc.RenderOptions(type: "box", material: material));
 
-    ground.setLocalScale(50, 1, 50);
+    ground.setLocalScale(gameSize.x, 1, gameSize.y);
+    // Make bottom-left corner of the ground the origin.
+    // ground.setPosition(gameSize.x / 2, 0, gameSize.y / 2);
     ground.setLocalPosition(0, -0.5, 0);
+    groundBox = pc.BoundingBox(
+        pc.Vec3(0, 0, 0), pc.Vec3(gameSize.x / 2, 0, gameSize.y / 2));
     root.addChild(ground);
 
     // Create an entity with a light component
@@ -133,6 +178,7 @@ class PlayCanvasAdapter {
     //       screenPos.x / scale, screenPos.y / scale, screenPos.z / scale);
     // }
 
+    // var height = 0.5;
     // void createPlayer(id, startingAngle, speed, radius) {
     //   // Create a capsule entity to represent a player in the 3d world
     //   final entity = pc.Entity();
@@ -146,8 +192,8 @@ class PlayCanvasAdapter {
     //   app.root.addChild(entity);
 
     //   final angle = startingAngle;
-    //   entity.setLocalPosition(radius * Math.sin(angle * math.DEG_TO_RAD), height,
-    //       radius * Math.cos(angle * math.DEG_TO_RAD));
+    //   entity.setLocalPosition(radius * Math.sin(angle * math.DEG_TO_RAD),
+    //       height, radius * Math.cos(angle * math.DEG_TO_RAD));
     //   entity.setLocalEulerAngles(0, angle + 90, 0);
     // }
 
