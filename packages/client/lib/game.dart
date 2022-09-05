@@ -26,12 +26,17 @@ class ClientState {
   }
 }
 
+// Matching how Flutter defines this.
+// See build.yaml for how it's defined.
+// https://github.com/dart-lang/webdev/issues/1739
+const bool kReleaseMode = bool.fromEnvironment('dart.vm.product');
+
 class GameController {
   ClientState? _clientState;
   late WebSocketChannel _connection;
 
   bool isProduction() {
-    return const bool.fromEnvironment('dart.vm.product');
+    return kReleaseMode;
   }
 
   World? get world => _clientState?.world;
