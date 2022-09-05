@@ -137,7 +137,7 @@ class ShimmerServer {
 
       // FIXME: Generalize to an action queue.
       client.on('move_player_to', (Map<String, dynamic> data) {
-        var position = Vector2(data['x'], data['y']);
+        var position = Vector2(data['x'].toDouble(), data['y'].toDouble());
         playerStateForClient(client.id)
             ?.hero
             .setComponent(DestinationComponent(location: position));

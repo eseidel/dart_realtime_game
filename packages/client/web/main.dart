@@ -1,11 +1,8 @@
 import 'dart:html' show CanvasElement, document;
 // ignore: library_prefixes
-import 'dart:math' as Math;
-
 import 'package:js/js.dart';
 import 'package:js/js_util.dart';
 import 'package:playcanvas/playcanvas.dart' as pc;
-import 'package:playcanvas/math.dart' as math;
 import 'package:client/render.dart';
 
 import 'package:client/game.dart';
@@ -21,7 +18,8 @@ void main() {
 
   var canvas = document.getElementById('canvas') as CanvasElement;
 
-  var playCanvas = PlayCanvasAdapter();
+  var playCanvas =
+      PlayCanvasAdapter(onAction: ((action) => game.onAction(action)));
   List<Renderer> prepareFrame(Duration deltaTime) {
     var world = game.world;
     if (world == null) {
@@ -36,6 +34,8 @@ void main() {
   playCanvas.start(prepareFrame);
 }
 
+typedef OnAction = void Function(ClientAction action);
+
 class PlayCanvasAdapter {
   final groundHeight = 0.5;
   final Map<EntityId, pc.Entity> _pcEntities = {};
@@ -47,6 +47,10 @@ class PlayCanvasAdapter {
   late pc.BoundingBox groundBox;
 
   pc.Entity get root => app.root;
+
+  OnAction onAction;
+
+  PlayCanvasAdapter({required this.onAction});
 
   void onMouseDown(event) {
     if (event.button == pc.MOUSEBUTTON_LEFT) {
@@ -62,7 +66,8 @@ class PlayCanvasAdapter {
   }
 
   void doRayCast(screenPosition) {
-    // Initialise the ray and work out the direction of the ray from the a screen position
+    // Initialise the ray and work out the direction of the ray from
+    // the a screen position
 
     cameraEntity.camera.screenToWorld(screenPosition.x, screenPosition.y,
         cameraEntity.camera.nearClip, ray.origin);
@@ -73,7 +78,8 @@ class PlayCanvasAdapter {
     // Test the ray against the ground
     var result = groundBox.intersectsRay(ray, hitPosition);
     if (result) {
-      print("hit: ${hitPosition.x}, ${hitPosition.y}, ${hitPosition.z}");
+      var destination = Vector2(hitPosition.x, hitPosition.z);
+      onAction(MoveHeroAction(destination: destination));
     }
   }
 
@@ -99,8 +105,7 @@ class PlayCanvasAdapter {
     );
 
     cameraEntity.rotateLocal(-30, 0, 0);
-    cameraEntity.translateLocal(0, 0, gameSize.x);
-    // camera.translateLocal(gameSize.x / 2, 0, 200);
+    cameraEntity.translate(gameSize.x / 2, 50, 1.2 * gameSize.y);
     root.addChild(cameraEntity);
 
     // Create an Entity for the ground
@@ -109,15 +114,18 @@ class PlayCanvasAdapter {
     material.update();
 
     var ground = pc.Entity();
+
+    ground.setLocalScale(gameSize.x, 1, gameSize.y);
+    ground.setLocalPosition(0, -0.5, 0);
+    // Make bottom-left corner of the ground the origin.
+    ground.translate(gameSize.x / 2, 0, gameSize.y / 2);
+    groundBox = pc.BoundingBox(
+      pc.Vec3(gameSize.x / 2, 0, gameSize.y / 2),
+      pc.Vec3(gameSize.x / 2, 0, gameSize.y / 2),
+    );
     ground.addComponent(
         "render", pc.RenderOptions(type: "box", material: material));
 
-    ground.setLocalScale(gameSize.x, 1, gameSize.y);
-    // Make bottom-left corner of the ground the origin.
-    // ground.setPosition(gameSize.x / 2, 0, gameSize.y / 2);
-    ground.setLocalPosition(0, -0.5, 0);
-    groundBox = pc.BoundingBox(
-        pc.Vec3(0, 0, 0), pc.Vec3(gameSize.x / 2, 0, gameSize.y / 2));
     root.addChild(ground);
 
     // Create an entity with a light component
@@ -213,8 +221,7 @@ class PlayCanvasAdapter {
 
   void updateEntityFromRenderer(pc.Entity entity, Renderer renderer) {
     assert(_pcEntities[renderer.id] == entity);
-    entity.setLocalPosition(
-        renderer.position.x, groundHeight, renderer.position.y);
+    entity.setPosition(renderer.position.x, groundHeight, renderer.position.y);
     entity.setLocalEulerAngles(0, renderer.angle, 0);
     entity.setLocalScale(renderer.radius, 1, renderer.radius);
   }

@@ -75,6 +75,7 @@ class GameController {
 
   void onAction(ClientAction action) {
     if (action is MoveHeroAction) {
+      print("MoveHeroAction: ${action.destination}");
       _connection.sink.add(Message('move_player_to',
           {'x': action.destination.x, 'y': action.destination.y}).toJson());
     }

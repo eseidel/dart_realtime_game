@@ -1,6 +1,6 @@
 # dart_realtime_game
 
-An example of using Dart and Flutter to build a realtime game.
+An example of using Dart to build a realtime game.
 
 Uses Dart for the full stack, shares code between client and server.
 
@@ -25,7 +25,7 @@ dart run bin/serve.dart
 
 
 cd packages/client
-flutter run
+webdev serve
 ```
 
 I typically run the server from the terminal and the client from VS Code.
