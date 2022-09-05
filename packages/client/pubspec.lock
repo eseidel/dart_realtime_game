@@ -277,9 +277,11 @@ packages:
   playcanvas:
     dependency: "direct main"
     description:
-      path: "../../../playcanvas"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "47a94a72afe166e3921fa353ff3e8ff1164c7f81"
+      url: "https://github.com/eseidel/playcanvas.git"
+    source: git
     version: "1.0.0"
   pool:
     dependency: transitive
