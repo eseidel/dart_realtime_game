@@ -8,12 +8,11 @@ void main() {
   var socket = WebSocketChannel.connect(Uri.parse('ws://localhost:3000'));
 
   int pointIndex = 0;
-  Vector2 size = Vector2(200, 200);
   var points = [
-    Vector2(.5, .25)..multiply(size),
-    Vector2(.75, .5)..multiply(size),
-    Vector2(.5, .75)..multiply(size),
-    Vector2(.25, .5)..multiply(size),
+    Vector2(.5, .25)..multiply(gameSize),
+    Vector2(.75, .5)..multiply(gameSize),
+    Vector2(.5, .75)..multiply(gameSize),
+    Vector2(.25, .5)..multiply(gameSize),
   ];
 
   var timer = Timer.periodic(const Duration(seconds: 2), (timer) {

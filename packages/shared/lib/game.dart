@@ -40,6 +40,9 @@ import 'systems.dart';
 //         entities = net.entities.map((e) => Entity.fromNet(e)).toList();
 // }
 
+// FIXME: This should be passed from client to server not hard coded.
+final Vector2 gameSize = Vector2(200, 200);
+
 // Mutable Game
 // Game and GameState could be combined?
 class Game {
@@ -52,7 +55,7 @@ class Game {
   Game({required int ticksPerSecond})
       : tickDuration = Duration(milliseconds: 1000 ~/ ticksPerSecond) {
     match = world.createEntity(ExecutionLocation.server);
-    match.setComponent(MapComponent(size: Vector2(200, 200)));
+    match.setComponent(MapComponent(size: gameSize));
   }
 
   Vector2 randomPosition() {

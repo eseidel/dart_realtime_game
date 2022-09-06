@@ -1,6 +1,6 @@
 # dart_realtime_game
 
-An example of using Dart and Flutter to build a realtime game.
+An example of using Dart to build a realtime game.
 
 Uses Dart for the full stack, shares code between client and server.
 
@@ -10,9 +10,7 @@ for network transport.
 I did not (yet) implement client interpolation or speculation, so the
 client only updates on server update pushes (currently 10 times per second).
 
-This does not use any "game" frameworks, just draws directly to canvas.
-Most game frameworks I've found do not separate state from rendering,
-so I chose to write my own (very simple) rendering layer.
+Currently uses PlayCanvas for rendering through a Dart wrapper.
 
 # Usage
 
@@ -25,7 +23,7 @@ dart run bin/serve.dart
 
 
 cd packages/client
-flutter run
+webdev serve
 ```
 
 I typically run the server from the terminal and the client from VS Code.
