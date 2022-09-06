@@ -52,7 +52,7 @@ class PlayCanvasAdapter {
 
   PlayCanvasAdapter({required this.onAction});
 
-  void onMouseDown(event) {
+  void onMouseDown(pc.MouseEvent event) {
     if (event.button == pc.MOUSEBUTTON_LEFT) {
       doRayCast(event);
     }

@@ -279,7 +279,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "47a94a72afe166e3921fa353ff3e8ff1164c7f81"
+      resolved-ref: e9c7b21c98309efa6071cc8054eb3e1503d7875d
       url: "https://github.com/eseidel/playcanvas.git"
     source: git
     version: "1.0.0"
