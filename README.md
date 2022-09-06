@@ -10,9 +10,7 @@ for network transport.
 I did not (yet) implement client interpolation or speculation, so the
 client only updates on server update pushes (currently 10 times per second).
 
-This does not use any "game" frameworks, just draws directly to canvas.
-Most game frameworks I've found do not separate state from rendering,
-so I chose to write my own (very simple) rendering layer.
+Currently uses PlayCanvas for rendering through a Dart wrapper.
 
 # Usage
 
