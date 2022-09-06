@@ -49,12 +49,12 @@ docker build -f .\dockerfiles\backend.Dockerfile -t backend .
 * Add ability to have players damage each other.
 * Fix rendering to draw centered around position.
 * Ability to set a color and name.
+* Make it possible to interact between entities (e.g. attacks? collisions).
 * Abitilies triggered by keys/buttons.
 * Pickups/buffs which change something.
 * Add database to hold server state.
 * Make rendering fancier (e.g. walk cycle)
 * Add background tiles (like forest)
-* Switch to 3d frontend.
 
 # Inspirations
 * https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html
