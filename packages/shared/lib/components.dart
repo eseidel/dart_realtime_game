@@ -58,6 +58,31 @@ class PhysicsComponent extends Component {
   Map<String, dynamic> toJson() => _$PhysicsComponentToJson(this);
 }
 
+// @JsonSerializable()
+// class SkillshotComponent extends Component {
+//   // Angle is in PhysicsComponent
+//   // Speed is in PhysicsComponent
+//   // Percentage complete? Or max distance or max time?
+//   // stops on collision? (with which things?)
+//   // Damage component?
+
+//   final double maxTime;
+//   final double timeRemaining;
+//   final double damage;
+
+//   SkillshotComponent({
+//     required this.maxTime,
+//     required this.timeRemaining,
+//     required this.damage,
+//   });
+
+//   factory SkillshotComponent.fromJson(Map<String, dynamic> json) =>
+//       _$SkillshotComponentFromJson(json);
+
+//   @override
+//   Map<String, dynamic> toJson() => _$SkillshotComponentToJson(this);
+// }
+
 @JsonSerializable()
 class DestinationComponent extends Component {
   @JsonVector2Position()

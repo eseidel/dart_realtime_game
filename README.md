@@ -14,6 +14,12 @@ Currently uses PlayCanvas for rendering through a Dart wrapper.
 
 # Usage
 
+## Setup
+```
+dart pub global activate webdev
+dart pub global activate melos
+```
+
 ## Developing locally
 ```
 melos bootstrap # runs pub get for all packages
@@ -34,6 +40,30 @@ I typically run the server from the terminal and the client from VS Code.
 docker build -f .\dockerfiles\frontend.Dockerfile -t frontend . 
 docker build -f .\dockerfiles\backend.Dockerfile -t backend .
 ```
+
+
+# Next
+* Abilities
+
+How do do abilities?
+When a button is pressed, an Action is sent to the server.
+Action is added to the queue of actions to be processed
+Action starts cooldown timer on the ability
+Action is processed by the server
+Action generates effects
+Effects can generate entities.
+
+Is everything just buffs?
+Buffs are just timed effects associated with entities.
+To compute any value you need to include effects of all buffs?
+
+How do buffs relate to components?  Can you have multiple of the same component
+for a given entity? Presuably yes.  So buffs are just components that are
+timed and can be added and removed.
+
+So to look up entity is a BuffedEntity, which includes all the buffs?
+
+
 
 # Known issues
 - Server leaks 2 PhysicsComponents on hot-restart.

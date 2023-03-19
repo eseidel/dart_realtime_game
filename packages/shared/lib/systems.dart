@@ -24,5 +24,12 @@ class PhysicsSystem extends System {
         entity.setComponent(physics.copyWith(position: destination.location));
       }
     }
+
+    // For each skillshot component
+    // Move move straight ahead at it's speed
+    // Play forward its completion percentage.
+    // Where are collision checks?
+    // Does the shot stop on collision?
+    // When 100% complete, remove the entity?
   }
 }

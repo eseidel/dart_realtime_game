@@ -13,13 +13,13 @@ dependencies:
     path: ../shared
   web_socket_channel: ^2.2.0
   playcanvas:
-    # path: ../../../playcanvas
-   git: https://github.com/eseidel/playcanvas.git
+    path: ../../../playcanvas
+  #  git: https://github.com/eseidel/playcanvas.git
   # FIXME: If package:playcanvas exposed a fully darty api we would
   # not need to depend on package:js.
   js: ^0.6.4
 
 dev_dependencies:
   build_runner: ^2.1.4
-  build_web_compilers: ^3.2.1
+  build_web_compilers: ^4.0.2
   lints: ^2.0.0
